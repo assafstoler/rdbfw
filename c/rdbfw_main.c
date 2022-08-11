@@ -20,7 +20,7 @@
 #include <signal.h>
 #include <limits.h>
 
-#include "rDB.h"
+#include <rdb/rdb.h>
 #include "messaging.h"
 #include "utils.h"
 #include "rdbfw.h"
@@ -29,7 +29,7 @@
 #include <locale.h>
 #include "signal.h"
 #include "log.h"
-#include "model_cpp_interface.h"
+//#include "model_cpp_interface.h"
 
 #ifdef USE_PRCTL
 #include <sys/prctl.h>
@@ -142,7 +142,7 @@ static int load_plugin_cb (void *data, void *user_ptr) {
 
 
     if ( p->cpp ) {
-        p->mdl = constructModel(p->pathname);
+        //p->mdl = constructModel(p->pathname);
     }
     else {
 #ifdef STATIC_BUILD
@@ -170,7 +170,7 @@ static int load_plugin_cb (void *data, void *user_ptr) {
     strcat(buf,"_rdbfw_fns");
 
     if (unittest_en != UT_LOAD_PLUGIN_3) {
-        if ( p->cpp ) {
+        /*if ( p->cpp ) {
             getName(p->mdl);
             p->cpp_plugin_info.pre_init = getPreInitPtr(p->mdl);
             p->cpp_plugin_info.init = getInitPtr(p->mdl);
@@ -179,7 +179,7 @@ static int load_plugin_cb (void *data, void *user_ptr) {
             p->cpp_plugin_info.de_init = getDeinitPtr(p->mdl);
             p->plugin_info = &p->cpp_plugin_info;
         }
-        else {
+        else */{
             p->plugin_info = (rdbfw_plugin_api_t *) dlsym(p->handle, buf);
         }
         if ((p->plugin_info == NULL) ||

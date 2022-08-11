@@ -2,7 +2,7 @@ project ( rdbfw_test )
 include ( CTest )
 
 
-add_executable ( fn_test fn_test.c ../utils.c )
+add_executable ( fn_test fn_test.c ../c/utils.c )
 target_link_libraries( fn_test m )
 target_include_directories ( fn_test PRIVATE $<TARGET_PROPERTY:rdbfwlib,INCLUDE_DIRECTORIES> )
 INSTALL(TARGETS fn_test

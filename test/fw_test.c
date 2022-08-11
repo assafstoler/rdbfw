@@ -8,7 +8,7 @@
 #include <pthread.h>
 #include <getopt.h>
 #include "log.h"
-#include "fwalloc.c"
+#include "fwalloc.h"
 #ifdef USE_PRCTL
 #include <sys/prctl.h>
 #endif

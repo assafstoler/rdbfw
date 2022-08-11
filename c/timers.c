@@ -42,7 +42,7 @@
 #include <sys/prctl.h>
 #endif
 
-#include "rDB.h"
+#include <rdb/rdb.h>
 #include "messaging.h"
 #include "rdbfw.h"
 #include "utils.h"

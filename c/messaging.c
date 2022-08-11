@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "rDB.h"
+#include <rdb/rDB.h>
 #include "messaging.h"
 #include "utils.h"
 #include "rdbfw.h"

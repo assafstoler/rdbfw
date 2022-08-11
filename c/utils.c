@@ -12,7 +12,7 @@
 
 // filloing 3 includes are here to satisy logging
 #include <pthread.h>
-#include "rDB.h"
+#include "rdb/rdb.h"
 #include "log.h"
 
 #include "utils.h"

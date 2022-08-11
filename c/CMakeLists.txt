@@ -1,6 +1,5 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12 FATAL_ERROR)
 
-PROJECT(rdbfw)
 
 #SET(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 #ADD_DEFINITIONS(-DPACKAGE_VERSION="${PACKAGE_VERSION}")
@@ -38,7 +37,7 @@ find_package( Threads REQUIRED )
         
 set (HEADERS
     ${HEADERS}
-    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR/../include}
     )#PARENT_SCOPE)
 
 
@@ -49,6 +48,14 @@ else ()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-result -Wno-missing-braces -Wno-unknown-warning-option -Wno-address-of-packed-member")
     # not neede for static bin... #-Wl,--no-as-needed")
 endif()
+
+#file(GLOB FW_HEADERS ${PROJECT_SOURCE_DIR}/include/*.h)
+set(FW_HEADERS ${PROJECT_SOURCE_DIR}/include/rdbfw.h 
+	${PROJECT_SOURCE_DIR}/include/log.h
+	${PROJECT_SOURCE_DIR}/include/ansi.h
+	${PROJECT_SOURCE_DIR}/include/fwalloc.h
+	${PROJECT_SOURCE_DIR}/include/messaging.h
+	${PROJECT_SOURCE_DIR}/include/utils.h )
 
 set (FW_SRC
     "messaging.c"
@@ -80,17 +87,19 @@ if (NOT APPLE)
     ADD_DEFINITIONS(-DUSE_PRCTL)
 endif()
 
-add_subdirectory(cpp_helpers)
-
+#add_subdirectory(cpp_helpers)
+message("HDR==${CMAKE_CURRENT_SOURCE_DIR}/../include")
+message("HDR@==${PROJECT_SOURCE_DIR}/include")
+message("HDR3==${FW_HEADERS}")
 if (SHARED_ONLY)
     MESSAGE("Building a Shared-Only build (library)")
     if(APPLE)
         ADD_LIBRARY(rdbfwlib SHARED ${FW_SRC} ${APPLE_SRC} fwalloc.h rdbfw.h)
     else()
-        ADD_LIBRARY(rdbfwlib SHARED ${FW_SRC} ${LINUX_SRC} fwalloc.h rdbfw.h)
+	    ADD_LIBRARY(rdbfwlib SHARED ${FW_SRC} ${LINUX_SRC})# ${FW_HEADERS})
     endif()
-    target_link_libraries (rdbfwlib pthread dl rdb_beta cpp_helpers)
-    target_include_directories (rdbfwlib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries (rdbfwlib pthread dl rdb_beta)# cpp_helpers)
+    target_include_directories (rdbfwlib PUBLIC ${PROJECT_SOURCE_DIR}/include)
 else()
     ADD_EXECUTABLE(rdbfw rdbfw_main.c messaging.c utils.c rdbfw.h hw_timers.c timers.c fwalloc.c skeleton.c event_driven_skeleton.c)
     target_link_libraries (rdbfw pthread dl rdb_beta rt)
@@ -102,21 +111,22 @@ endif()
 
 if (NOT STATIC_BUILD)
     ADD_LIBRARY(timers SHARED timers.c utils.c messaging.c)
-    target_include_directories (timers PRIVATE $<TARGET_PROPERTY:cpp_helpers,INCLUDE_DIRECTORIES>)
+    #target_include_directories (timers PRIVATE $<TARGET_PROPERTY:cpp_helpers,INCLUDE_DIRECTORIES>)
     target_link_libraries (timers pthread dl rdb_beta rt)
 
     ADD_LIBRARY(hw_timers SHARED hw_timers.c utils.c messaging.c)
-    target_include_directories (hw_timers PRIVATE $<TARGET_PROPERTY:cpp_helpers,INCLUDE_DIRECTORIES>)
+    #target_include_directories (hw_timers PRIVATE $<TARGET_PROPERTY:cpp_helpers,INCLUDE_DIRECTORIES>)
     target_link_libraries (hw_timers pthread dl rdb_beta rt)
 endif()
 
-set_target_properties(rdbfwlib PROPERTIES PUBLIC_HEADER "rdbfw.h;log.h;ansi.h;fwalloc.h;messaging.h;utils.h")
+#set_target_properties(rdbfwlib PROPERTIES PUBLIC_HEADER "rdbfw.h;log.h;ansi.h;fwalloc.h;messaging.h;utils.h")
+set_target_properties(rdbfwlib PROPERTIES PUBLIC_HEADER "${FW_HEADERS}")
 INSTALL(TARGETS rdbfwlib hw_timers timers
         LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
         ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_PREFIX}/include/rdbfw
 )
 
-add_subdirectory(test)
+#add_subdirectory(test)
 
 enable_testing()

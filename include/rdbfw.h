@@ -51,11 +51,11 @@
 #include <stdio.h>
 
 #ifdef BUILDING_LIB
-#include "rDB.h"
-#include "model_cpp_interface.h"
+#include <rdb/rdb.h>
+//#include "cpp_helpers/model_cpp_interface.h"
 #else
-#include <rdb/rDB.h>
-#include <rdbfw/model_cpp_interface.h>
+#include <rdb/rdb.h>
+//#include <rdbfw/model_cpp_interface.h>
 #endif
 
 
@@ -144,7 +144,7 @@ typedef struct plugins_s {
     char                    **argv;
     // Below 3 lines only sed wirh CPP linkage
     int                     cpp;
-    Model                   *mdl;
+    //Model                   *mdl;
     rdbfw_plugin_api_t      cpp_plugin_info;
 
 } plugins_t;

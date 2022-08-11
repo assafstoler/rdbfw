@@ -8,8 +8,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "rDB.h"
-//#include "vr.h"
+#include "rdb/rdb.h"
 #include "log.h"
 #include "fwalloc.h"
 

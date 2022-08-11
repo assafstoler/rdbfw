@@ -10,7 +10,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <getopt.h>
-#include "rDB.h"
+#include <rdb/rdb.h>
 #include "utils.h"
 #include "log.h"
 

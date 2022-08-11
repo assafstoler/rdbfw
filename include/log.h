@@ -8,13 +8,13 @@
 #include <inttypes.h>
 
 #ifdef BUILDING_LIB
-#include "model_cpp_interface.h"
+//#include "model_cpp_interface.h"
 #include "messaging.h"
 #include "rdbfw.h"
 #include "utils.h"
 #include "ansi.h"
 #else
-#include <rdbfw/model_cpp_interface.h>
+//#include <rdbfw/model_cpp_interface.h>
 #include <rdbfw/messaging.h>
 #include <rdbfw/rdbfw.h>
 #include <rdbfw/utils.h>
