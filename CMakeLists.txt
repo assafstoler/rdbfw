@@ -42,6 +42,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fPIC -fms-extensions")
 set(CMAKE_CXX_FLAGS_DEBUG "-Wall -O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3")
 
+add_definitions ( -DBUILDING_LIB )
 
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
@@ -72,7 +73,6 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -g -export-dynamic")
 message ("libdir==${CMAKE_INSTALL_LIBDIR}")
 message ("libdir==${CMAKE_INSTALL_PREFIX}")
 
-#add_subdirectory(demo)
 add_subdirectory(c)
 add_subdirectory(test)
 

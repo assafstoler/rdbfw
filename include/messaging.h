@@ -5,6 +5,10 @@
 #ifndef MESSAGING_H
 #define MESSAGING_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef BUILDING_LIB
 #include "rdbfw.h"
 #else
@@ -113,8 +117,8 @@ typedef struct rdbmsg_queue_s {
 
 void rdbmsg_register_hooks(void);
 
-int rdbmsg_register_msg_type (char *type, char *msg);
-int rdbmsg_lookup_id (char *str);
+int rdbmsg_register_msg_type (const char *type, const char *msg);
+int rdbmsg_lookup_id (const char *str);
 char * rdbmsg_lookup_string (uint32_t value);
 
 int rdbmsg_init(rdb_pool_t *plugin_pool);
@@ -133,5 +137,9 @@ int rdbmsg_implode (plugins_t *ctx, rdbmsg_queue_t *q);
 void rdbmsg_destroy_tree (void *data, void *user_ptr, int stage);
 int rdbmsg_destroy (void);
 void rdbmsg_clean(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

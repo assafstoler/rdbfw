@@ -4,7 +4,9 @@
 
 #ifndef __FWALLOC__H__
 #define __FWALLOC__H__
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 #define MAX_RDBFW_ALLOC_SZ ( 1048576 * 16 )
 #define MAX_RDBFW_SUPERALLOC_SZ ( 1048576 * 64 ) // (max) 64M per allocation
 //#define MAX_RDBFW_SUPERALLOC_SZ 120 // (max) 1M per allocation
@@ -92,5 +94,8 @@ int rdbfw_up_ref ( void *ptr, int count );
  * sb_cnt = 1 + 1 = 2
  * sb_sz = 15 / 2 + 1 == 8 // place for 16 items*/
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

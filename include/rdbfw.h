@@ -48,14 +48,18 @@
  *
  *   Modules may or may not be unloaded from the FW after a de_init call. 
  ***/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 
 #ifdef BUILDING_LIB
 #include <rdb/rdb.h>
-//#include "cpp_helpers/model_cpp_interface.h"
+//#include "cpp_bindings.h"
 #else
 #include <rdb/rdb.h>
-//#include <rdbfw/model_cpp_interface.h>
 #endif
 
 
@@ -84,8 +88,8 @@ extern int unittest_en;
 static const int NAME_EXTRA_LEN = 11; //10 byte context ID + null
 
 typedef struct rdbfw_plugin_api_s {
+    void (*pre_init)(void *);           // set up stuff like set friendly name, register custom messages, etc
     void (*init)(void *);                // Initilize the module, if requited (allocation, zero of pointers)
-    void (*make_depend)(void *);
     void (*start)(void *);
     void (*stop)(void *);
     void (*de_init)(void *);
@@ -96,7 +100,6 @@ typedef struct rdbfw_plugin_api_s {
     void (*state)(void *);
     void (*signal)(void *);
     void (*opt_help)(void *);
-    void (*pre_init)(void *);           // set uo stuff like set friendly name, etc
 } rdbfw_plugin_api_t;
 
 typedef enum {
@@ -144,23 +147,24 @@ typedef struct plugins_s {
     char                    **argv;
     // Below 3 lines only sed wirh CPP linkage
     int                     cpp;
-    //Model                   *mdl;
-    rdbfw_plugin_api_t      cpp_plugin_info;
+    //CPPM                    *cppm;          // cpp-module
 
 } plugins_t;
 
+char *pluging_type_print_name(plugins_t *p);
 extern uint64_t wake_count_limit;
 
-int rdbfw_main(int argc, char *argv[], char *app_name);
 
 int register_plugin(
-        char *name, 
+        const char *name, 
         rdb_pool_t *plugin_pool,
         int msg_slots,
         uint32_t req_ctx_id,
         int cpp,
-        char *library_name_override
+        const char *library_name_override
         );
+
+int rdbfw_main(int argc, char *argv[], const char *app_name);
 
 void rdbfw_app_help(void);
 int rdbfw_app_process_opts (int argc, char **argcv);
@@ -231,4 +235,9 @@ extern char *lib_prefix;
 #define RDBFW_ERR_MESSAGING_INIT    -2  // Messaging subsystem failed ot load
 #define RDBFW_ERR_MAIN_POOL         -1  // Unable to register Main pool
 // test 
+
+#ifdef __cplusplus
+} // closing brace for extern "C"
+#endif
+
 #endif

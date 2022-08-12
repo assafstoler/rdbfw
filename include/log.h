@@ -4,6 +4,10 @@
 
 #ifndef __LOG_H
 #define __LOG_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <pthread.h>
 #include <inttypes.h>
 
@@ -128,5 +132,8 @@ static const int64_t reducer = 1563000000;
         } \
     } while (0)
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

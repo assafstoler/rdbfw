@@ -11,7 +11,7 @@
 #include <dlfcn.h>
 #include <errno.h>
 
-#include "rDB.h"
+#include <rdb/rdb.h>
 #include "messaging.h"
 #include "rdbfw.h"
 #include "log.h"

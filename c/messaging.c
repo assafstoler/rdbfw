@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include <rdb/rDB.h>
+#include <rdb/rdb.h>
 #include "messaging.h"
 #include "utils.h"
 #include "rdbfw.h"
@@ -96,7 +96,7 @@ int rdbmsg_destroy (void) {
         return 0;
 }
 
-int rdbmsg_lookup_id (char *str){
+int rdbmsg_lookup_id (const char *str){
     rdbmsg_msg_type_t *msg;
     
     pthread_rwlock_rdlock ( &rwlock );
@@ -131,7 +131,7 @@ char * rdbmsg_lookup_string (uint32_t value){
     }
 }
 
-int rdbmsg_register_msg_type (char *type, char *msg_str){
+int rdbmsg_register_msg_type (const char *type, const char *msg_str){
     rdbmsg_msg_type_t *msg;
     int rc;
 

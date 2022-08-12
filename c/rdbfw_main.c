@@ -29,7 +29,6 @@
 #include <locale.h>
 #include "signal.h"
 #include "log.h"
-//#include "model_cpp_interface.h"
 
 #ifdef USE_PRCTL
 #include <sys/prctl.h>
@@ -81,6 +80,10 @@ static void fw_term(int rc, rdb_pool_t *plugin_pool);
 
 //Code...
 //
+
+char *pluging_type_print_name(plugins_t *p) {
+	return (p->name);
+}
 
 static int help_cb(void *data, void *user_ptr) {
     plugins_t *p;
@@ -141,14 +144,11 @@ static int load_plugin_cb (void *data, void *user_ptr) {
     }
 
 
-    if ( p->cpp ) {
-        //p->mdl = constructModel(p->pathname);
-    }
-    else {
+    {
 #ifdef STATIC_BUILD
         p->handle = dlopen (NULL , RTLD_LAZY| RTLD_GLOBAL);
 #else
-        fwl (LOG_TRACE, p, "attempting to load plugin (dlopen()) %s - %s\n", p->pathname, eptr);
+        fwl (LOG_INFO, p, "attempting to load plugin (dlopen()) %s - %s\n", p->pathname, eptr);
         p->handle = dlopen (p->pathname , RTLD_LAZY| RTLD_GLOBAL);
 #endif
         if (p->handle == NULL) {
@@ -170,33 +170,14 @@ static int load_plugin_cb (void *data, void *user_ptr) {
     strcat(buf,"_rdbfw_fns");
 
     if (unittest_en != UT_LOAD_PLUGIN_3) {
-        /*if ( p->cpp ) {
-            getName(p->mdl);
-            p->cpp_plugin_info.pre_init = getPreInitPtr(p->mdl);
-            p->cpp_plugin_info.init = getInitPtr(p->mdl);
-            p->cpp_plugin_info.start = getStartPtr(p->mdl);
-            p->cpp_plugin_info.stop = getStopPtr(p->mdl);
-            p->cpp_plugin_info.de_init = getDeinitPtr(p->mdl);
-            p->plugin_info = &p->cpp_plugin_info;
-        }
-        else */{
-            p->plugin_info = (rdbfw_plugin_api_t *) dlsym(p->handle, buf);
-        }
+        p->plugin_info = (rdbfw_plugin_api_t *) dlsym(p->handle, buf);
         if ((p->plugin_info == NULL) ||
                 ((eptr = dlerror()) != NULL))  {
             fwl (LOG_ERROR, p, "failed dlsym() : %s - %s\n", eptr, buf);
             goto load_plugin_cb_err;
         }
     }
-    if ( p->cpp ) {
-        if (( p->cpp_plugin_info.init == NULL ) ||
-                ((eptr = dlerror()) != NULL))  {
-            fwl (LOG_ERROR, p, "failed dlsym() : %s - %s\n", eptr, buf);
-            eptr=dlerror();
-            goto load_plugin_cb_err;
-        }
-    }
-    else if ((p->plugin_info == NULL) || ((eptr = dlerror()) != NULL))  {
+    if ((p->plugin_info == NULL) || ((eptr = dlerror()) != NULL))  {
         fwl (LOG_ERROR, p, "failed dlsym() : %s - %s\n", eptr, buf);
         eptr=dlerror();
         goto load_plugin_cb_err;
@@ -347,7 +328,7 @@ static int start_plugin_cb (void *data, void *user_ptr) {
     int *failure = (int *) user_ptr;
 
     if (p->state == RDBFW_STATE_INITIALIZED) {
-        fwl (LOG_INFO, p, "START: %s\n", p->name);
+        fwl (LOG_INFO, p, "START: %s, (%p)\n", p->name, (*p->plugin_info).start);
         if ((*p->plugin_info).start)  (*p->plugin_info).start(p);
         while (p->state != RDBFW_STATE_RUNNING &&
                 p->state != RDBFW_STATE_STOPALL) {
@@ -550,12 +531,12 @@ static int rdb_dump_cb (void *data, void *user_ptr) {
 #define PLUGIN_LIB_SUFFIX_LEN (sizeof(PLUGIN_LIB_SUFFIX))
 
 int register_plugin(
-        char *name,
+        const char *name,
         rdb_pool_t *plugin_pool,
         int msg_slots,
         uint32_t req_ctx_id,
         int cpp,
-        char *library_name_override
+        const char *library_name_override
         ) {
     plugins_t *plugin_node;
     uint32_t ctx_id;
@@ -1026,7 +1007,7 @@ int rdbfw_add_debug_flag (int flag) {
     return 0;
 }
 
-int rdbfw_main (int argc, char *argv[], char *app_name)
+int rdbfw_main (int argc, char *argv[], const char *app_name)
 {
     int rc;
     int show_help = 0;

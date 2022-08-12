@@ -4,6 +4,9 @@
 
 #ifndef _UTILS_H_
 #define _UTILS_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <time.h>
 #include <stdio.h>
@@ -40,4 +43,7 @@ int fd_set_flag(int fd, int flag, int set);
 char *hex_log(uint8_t *ptr, int len);
 #define FLAG_SET 1
 #define FLAG_UNSET 0
+#ifdef __cplusplus
+}
+#endif
 #endif
