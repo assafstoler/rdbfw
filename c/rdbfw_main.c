@@ -202,6 +202,23 @@ static int load_plugin_cb (void *data, void *user_ptr) {
         goto load_plugin_cb_err;
     }
 
+    if (NULL == p->plugin_info->init) {
+        fwl(LOG_FATAL, p, "Mandatory init() fn not implemented in loaded module %s. Aborting\n",p->name);
+        goto load_plugin_cb_err;
+    }
+    if (NULL == p->plugin_info->start) {
+        fwl(LOG_FATAL, p, "Mandatory start() fn not implemented in loaded module %s. Aborting\n",p->name);
+        goto load_plugin_cb_err;
+    }
+    if (NULL == p->plugin_info->stop) {
+        fwl(LOG_FATAL, p, "Mandatory stop() fn not implemented in loaded module %s. Aborting\n",p->name);
+        goto load_plugin_cb_err;
+    }
+    if (NULL == p->plugin_info->de_init) {
+        fwl(LOG_FATAL, p, "Mandatory taredown() fn not implemented in loaded module %s. Aborting\n",p->name);
+        goto load_plugin_cb_err;
+    }
+
     free(buf);
 
     p->state = RDBFW_STATE_LOADED;
@@ -259,9 +276,11 @@ static int de_init_plugin_cb (void *data, void *user_ptr) {
     if (p->state == RDBFW_STATE_STOPPED ||
             p->state == RDBFW_STATE_INITIALIZED ||
              p->state == RDBFW_STATE_INITIALIZING) {
-        (*p->plugin_info).de_init(p);
-        while (p->state != RDBFW_STATE_LOADED) {
-            usleep(0);
+        if ((*p->plugin_info).de_init) {
+            (*p->plugin_info).de_init(p);
+            while (p->state != RDBFW_STATE_LOADED) {
+                usleep(0);
+            }
         }
         pthread_mutex_destroy(&p->msg_mutex);
         pthread_mutex_destroy(&p->startup_mutex);
