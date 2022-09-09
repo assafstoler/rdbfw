@@ -4,12 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <locale.h>
-
 #include <netdb.h>
 #include <netinet/in.h>
-
 #include <unistd.h>
-
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
@@ -19,15 +16,15 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <limits.h>
+#include <getopt.h>
+#include <errno.h>
+#include <locale.h>
 
 #include <rdb/rdb.h>
 #include "messaging.h"
 #include "utils.h"
 #include "rdbfw.h"
 #include "fwalloc.h"
-#include <errno.h>
-#include <locale.h>
-#include "signal.h"
 #include "log.h"
 
 #ifdef USE_PRCTL
@@ -56,6 +53,7 @@ static int break_requested_by_user = 0; // signify cause of break so can return 
 static int signal_trapped = 0;
 static int rdbfw_active = 0;
 
+
 static pthread_mutex_t   main_mutex;
 static pthread_cond_t    main_condition;
 static pthread_t         main_thread;
@@ -69,7 +67,7 @@ static char *eptr = NULL;
 //rdb_pool_t *plugin_pool;
 //plugins_t *plugin_node = NULL;
 
-extern int optind;
+extern int optind, opterr, optopt;
 
 // used to alloate a unique auto-id for auto-context dynamic plugins
 static uint32_t ctx_auto_id = 0;
@@ -636,14 +634,14 @@ int register_plugin(
     for (i = 0; i < msg_slots; i++) {
         q = calloc (1,sizeof (rdbmsg_queue_t));
         if (q == NULL) {
-            fwlog (LOG_ERROR,
+            fwl (LOG_ERROR, NULL,
                     "Unable to allocate all requested messaages for %s. (req: %d, available %d)\n",
                     plugin_node->uname, msg_slots, i);
             break;
         }
 
         if (0 == rdb_insert(plugin_node->empty_msg_store, q)) {
-            fwlog (LOG_ERROR,
+            fwl (LOG_ERROR, NULL,
                     "Failed to insert msg_buffer into data pool for plugin %s. Discarding\n",
                     plugin_node->uname);
             free (q);
@@ -654,7 +652,7 @@ int register_plugin(
     plugin_node->msg_dispatch_root  = rdb_register_um_pool ( buf,
                         1, 0, RDB_KUINT32 | RDB_KASC | RDB_BTREE, NULL );
     if (0 == rdb_insert(plugin_pool, plugin_node)) {
-        fwlog (LOG_ERROR,
+        fwl (LOG_ERROR, NULL,
                 "Failed to insert %s to plugin_pool. this plugin will NOT function\n",
                 buf);
         if (plugin_node->msg_dispatch_root != NULL) {
@@ -706,15 +704,8 @@ static void sig_func(int sig) {
         pthread_cond_signal(&main_condition);
         pthread_mutex_unlock(&main_mutex);
     }
-    else if (sig == SIGPIPE) {
-        fwlog (LOG_WARN, "Caught sigpipe %d\n", sig);
-        signal_trapped = sig;
-        pthread_mutex_lock(&main_mutex);
-        pthread_cond_signal(&main_condition);
-        pthread_mutex_unlock(&main_mutex);
-    }
-    else if (sig == SIGQUIT) {
-        fwlog (LOG_WARN, "Caught SigQUIT %d\n", sig);
+      else if (sig == SIGQUIT) {
+        sigfwlog (LOG_WARN, "Caught SigQUIT %d\n", sig);
         signal_trapped = sig;
         break_requested = 1;
         break_requested_by_user = 1;
@@ -723,7 +714,7 @@ static void sig_func(int sig) {
         pthread_mutex_unlock(&main_mutex);
     }
     else if (sig == SIGTERM) {
-        fwlog (LOG_WARN, "Caught SigTERM %d\n", sig);
+        sigfwlog (LOG_WARN, "Caught SigTERM %d\n", sig);
         signal_trapped = sig;
         break_requested = 1;
         break_requested_by_user = 1;
@@ -881,9 +872,9 @@ int rdbfw_wait (void) {
     return (*rc);
 }
 
+static int rc;
 void *rdbfw_main_loop (void *plugin_pool) {
     char sbuf[8096];
-    int rc;
     struct timespec main_timeout;
 
     //pthread_mutex_lock(&main_mutex);
@@ -940,62 +931,23 @@ void *rdbfw_main_loop (void *plugin_pool) {
         fwl_no_emit (LOG_DEBUG, NULL, "Pool status dump - POST-Shutdown\n");
         rdb_print_pool_stats(sbuf,8096);
         fprintf(stderr,"%s\n",sbuf);
+
+        rc = clock_gettime(CLOCK_REALTIME, &time_end);
+
+        if (rc) {
+            fwl_no_emit (LOG_ERROR, NULL, "Error: Failed to get clock\n");
+        } else {
+            char time_buf[TIME_BUF_MAXLEN];
+            s_ts_diff_time_ns(&time_start, &time_end, &delta_time);
+            fwl_no_emit (LOG_DEBUG, NULL, "uptime: %s", snprint_ts_time (&delta_time, time_buf, TIME_BUF_MAXLEN) );
+        }
+        rdb_print_pools(logger);
     }
     sbuf[0]=0;
 
     rdbfw_active = 0;
     rc = break_requested_by_user ? 1 : 0;
     pthread_exit (&rc);
-    exit(0);
-    rdb_iterate(plugin_pool,  0, drop_plugin_cb, NULL, unlink_plugin_cb, NULL);
-    rdbmsg_clean();
-
-    rdb_free_prealloc();
-    if ( rdb_error_string != NULL ) {
-        fwl (LOG_WARN, NULL, "SHOTDOWN err: %s\n", rdb_error_string);
-    }
-
-    //fw_term(-99, plugin_pool);
-    //rdb_print_pools(logger);
-
-    fwl (LOG_INFO, NULL, "\n\nleft over data pools:\n")   ;
-    rdb_print_pool_stats(sbuf,8096);
-    fprintf(stderr,"%s\n",sbuf);
-    //exit(0);
-
-   // rdb_free_prealloc();
-
-    rc = clock_gettime(CLOCK_REALTIME, &time_end);
-
-    if (rc) {
-        fwl (LOG_ERROR, NULL, "Error: Failed to get clock\n");
-    } else {
-        char time_buf[TIME_BUF_MAXLEN];
-        s_ts_diff_time_ns(&time_start, &time_end, &delta_time);
-        fwl (LOG_ERROR, NULL, "uptime: %s", snprint_ts_time (&delta_time, time_buf, TIME_BUF_MAXLEN) );
-    }
-
-    //rdb_iterate(plugin_pool,  0, print_counters_cb, NULL, NULL, NULL);
-    // skipping teardown for demo
-    //plugin_pool->drop = 1;
-    rdb_gc();
-    //info("###left:\n");
-    //rdb_print_pools(stdout);
-    rdb_flush(plugin_pool, unlink_plugin_cb, NULL);
-    rdb_drop_pool(plugin_pool);
-    //plugin_pool->drop = 1;
-    //rdb_gc();
-
-    fwl (LOG_INFO, NULL, "left over data pools:\n")   ;
-    rdb_print_pools(logger);
-
-    rdb_print_pool_stats(sbuf,4096);
-    fwlog(LOG_WARN,"%s\n",sbuf);
-
-    rdbfw_active = 0;
-
-    pthread_mutex_unlock(&main_mutex);
-    pthread_exit (NULL);
 }
 
 int rdbfw_add_debug_flag (int flag) {
