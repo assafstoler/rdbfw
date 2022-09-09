@@ -57,7 +57,7 @@ static const int64_t reducer = 1563000000;
 #define LOG_FLAGS 0xFFFFFFF8
 
 
-#define fwlog_no_emit fwlog
+/*#define fwlog_no_emit fwlog
 #define fwlog(a, b, arg...)  do {    \
         if (log_level >= a) {       \
             pthread_mutex_lock(&log_mutex); \
@@ -66,7 +66,7 @@ static const int64_t reducer = 1563000000;
             pthread_mutex_unlock(&log_mutex); \
         }           \
     } while (0)
-
+*/
 #define sigfwlog(a, b, arg...)  do {    \
         if ( log_level >= (a) && 3 >= (a) ) { \
             snprintf(sig_log_buf, 255, "%c%'.3f:%20s:_%d_:"b, ((a)<=2) ? 'e' : ' ', (double) (clock_gettime_ms(NULL) / 1000), __FUNCTION__, (a),##arg); \

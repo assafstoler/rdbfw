@@ -39,7 +39,7 @@ static int group_skel;
 static void *skel_event(void *p) {
     rdbmsg_msg_t *msg;
     rdbmsg_queue_t *q;
-    fwlog (LOG_INFO, "Starting %s\n", ctx->name);
+    fwl (LOG_INFO, p, "Starting %s\n", ctx->name);
     static int first_entry = 1;
 
 #ifdef USE_PRCTL
@@ -94,7 +94,7 @@ static void *skel_event(void *p) {
 					    route_skel,
 					    rdbmsg_lookup_id ("GROUP_TIMERS"),
                         timer_id)) {
-                        fwlog (LOG_ERROR, "rdbmsg_request failed. events may not fire. Aborting");
+                        fwl (LOG_ERROR, p, "rdbmsg_request failed. events may not fire. Aborting");
                         ctx->state = RDBFW_STATE_SOFTSTOPALL;
                     }
                 }
@@ -123,7 +123,7 @@ static void *skel_event(void *p) {
 static void skel_event_destroy(void *p) {
     ctx = p;
     
-    fwlog (LOG_INFO, "Destroy %s\n", ctx->name);
+    fwl (LOG_INFO, p, "Destroy %s\n", ctx->name);
     ctx->state = RDBFW_STATE_LOADED;
 
 }
@@ -142,7 +142,7 @@ static void skel_event_pre_init(void *p) {
 static void skel_event_init(void *p) {
     ctx = p;
     
-    fwlog (LOG_INFO, "Initilizing %s\n", ctx->name);
+    fwl (LOG_INFO, p, "Initilizing %s\n", ctx->name);
 
     timer_ack_id = rdbmsg_lookup_id ("ID_TIMER_ACK");
     route_timers = rdbmsg_lookup_id ("ROUTE_MDL_TIMERS");
@@ -156,7 +156,7 @@ static void skel_event_init(void *p) {
     // ask to receive messages of type... Timers Ack.    
     if (0 != rdbmsg_request(p, route_timers, route_skel, rdbmsg_lookup_id ("GROUP_TIMERS"), 
                 rdbmsg_lookup_id ("ID_TIMER_ACK") ) ) {
-        fwlog (LOG_ERROR, "rdbmsg_request failed. events may not fire. Aborting");
+        fwl (LOG_ERROR, p, "rdbmsg_request failed. events may not fire. Aborting");
         ctx->state = RDBFW_STATE_STOPALL;
         return;
     }
@@ -177,24 +177,24 @@ static void skel_event_start(void *p) {
         }
         if (rc == EAGAIN) {
             if (cnt > MAX_THREAD_RETRY) {
-                fwlog (LOG_ERROR, "Thread creation failed, MAX_THREAD_RETRY exusted\n");
+                fwl (LOG_ERROR, p, "Thread creation failed, MAX_THREAD_RETRY exusted\n");
                 ctx->state = RDBFW_STATE_STOPALL;
                 return;
             } 
             else {
                 cnt++;
-                fwlog (LOG_ERROR, "Thread creation failed, will retry\n");
+                fwl (LOG_ERROR, p, "Thread creation failed, will retry\n");
                 usleep (100000);
                 continue;
             }
         }
         else if (rc == EPERM) {
-            fwlog (LOG_ERROR, "Thread creation failed - missing permissions - aborting\n");
+            fwl (LOG_ERROR, p, "Thread creation failed - missing permissions - aborting\n");
             ctx->state = RDBFW_STATE_STOPALL;
             return;
         }
         else if (rc == EINVAL) {
-            fwlog (LOG_ERROR, "Thread creation failed - Invalid attribute - aborting\n");
+            fwl (LOG_ERROR, p, "Thread creation failed - Invalid attribute - aborting\n");
             ctx->state = RDBFW_STATE_STOPALL;
             return;
         }

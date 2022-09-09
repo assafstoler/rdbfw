@@ -36,7 +36,7 @@ void profiling (int64_t start, int threshold, const char *where) {
     struct timespec ts;
     int64_t loop_end_ms = clock_gettime_ms(&ts);
     if (loop_end_ms - start >= threshold) {
-        fwlog (LOG_WARN, "%"PRIi64"ms delay @ %s\n", loop_end_ms - start,  where );
+        fwl (LOG_WARN, NULL, "%"PRIi64"ms delay @ %s\n", loop_end_ms - start,  where );
     }
 
 }
@@ -64,7 +64,7 @@ void clock_settime_ms(int64_t new_time) {
     //ts.tv_sec = new_time / SEC_TO_MSEC;
     //ts.tv_nsec = (new_time % SEC_TO_MSEC) * NSEC_TO_MSEC;
     if (-1 == clock_settime(CLOCK_REALTIME, &ts)) {
-        fwlog (LOG_ERROR, "Faild to set clock\n");
+        fwl (LOG_ERROR, NULL, "Faild to set clock\n");
     }
     return;
 #endif
@@ -101,7 +101,7 @@ void clock_settime_ns(int64_t new_time) {
     ts.tv_sec = new_time / DIVIDER_1;
     ts.tv_nsec = new_time % DIVIDER_1;
     if (-1 == clock_settime(CLOCK_REALTIME, &ts)) {
-        fwlog (LOG_ERROR, "Faild to ste clock\n");
+        fwl (LOG_ERROR, NULL, "Faild to ste clock\n");
     }
     return;
 #endif

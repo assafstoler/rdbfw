@@ -98,7 +98,7 @@ static void timers_stop_all(void){
     pthread_mutex_lock(&ctx->msg_mutex);
     for (i = 0; i < MAX_TIMERS; i++) {
         if (t_info[i].hz != 0) {
-            fwlog (LOG_INFO, "Stoping timer thread %d\n", i);
+            fwl (LOG_INFO, NULL, "Stoping timer thread %d\n", i);
             //pthread_cancel(timers[i]);
             pthread_join(timers[i], NULL);
             memset(&t_info[i],0, sizeof (t_info[i]));
@@ -108,7 +108,7 @@ static void timers_stop_all(void){
     // unlocking here after (hopefully) all pending timers are gone
     pthread_mutex_unlock(&ctx->msg_mutex);
 
-    fwlog (LOG_DEBUG_MORE, "Done\n");
+    fwl (LOG_DEBUG_MORE, NULL, "Done\n");
 }
 
 static void *timers_main(void *p) {
@@ -152,7 +152,7 @@ static void *timers_main(void *p) {
             rdb_unlock(ctx->msg_q_pool, __FUNCTION__);
 
             if (q) {    // process message
-                fwlog (LOG_DEBUG_MORE, "%s: Received message grp.id = %d.%d\n",
+                fwl (LOG_DEBUG_MORE, p, "%s: Received message grp.id = %d.%d\n",
                         ctx->name, q->msg.group, q->msg.id);
                 if (q->msg.id == timer_stop_id) {
                     timer_id = q->msg.len - timer_tick[0];
@@ -181,22 +181,22 @@ static void *timers_main(void *p) {
                             }
                             if (rc == EAGAIN) {
                                 if (cnt > MAX_THREAD_RETRY) {
-                                    fwlog (LOG_ERROR, "Timer thread creation failed, MAX_THREAD_RETRY exusted\n");
+                                    fwl (LOG_ERROR, p, "Timer thread creation failed, MAX_THREAD_RETRY exusted\n");
                                     ctx->state = RDBFW_STATE_STOPALL;
                                 } 
                                 else {
                                     cnt++;
-                                    fwlog (LOG_ERROR, "Timer tread creation failed, will retry\n");
+                                    fwl (LOG_ERROR, p, "Timer tread creation failed, will retry\n");
                                     usleep (10000);
                                     continue;
                                 }
                             }
                             else if (rc == EPERM) {
-                                fwlog (LOG_ERROR, "Timer thread creation failed - missing permissions - aborting\n");
+                                fwl (LOG_ERROR, p, "Timer thread creation failed - missing permissions - aborting\n");
                                 ctx->state = RDBFW_STATE_STOPALL;
                             }
                             else if (rc == EINVAL) {
-                                fwlog (LOG_ERROR, "Timer thread creation failed - Invalid attribute - aborting\n");
+                                fwl (LOG_ERROR, p, "Timer thread creation failed - Invalid attribute - aborting\n");
                                 ctx->state = RDBFW_STATE_STOPALL;
                             }
                         }
@@ -258,7 +258,7 @@ static void timers_init(void *p) {
 
     if (0 != rdbmsg_request(p, rdbmsg_lookup_id ("ROUTE_NA"), timer_route,
                 rdbmsg_lookup_id ("GROUP_NA"), timer_start_id)) {
-        fwlog (LOG_ERROR, "rdbmsg_request failed. events may not fire. Aborting (%d.%d.%d.%d)",
+        fwl (LOG_ERROR, p, "rdbmsg_request failed. events may not fire. Aborting (%d.%d.%d.%d)",
                 rdbmsg_lookup_id ("ROUTE_NA"), timer_route, 
                 rdbmsg_lookup_id ("GROUP_NA"), timer_start_id);
         ctx->state = RDBFW_STATE_STOPALL;
@@ -266,7 +266,7 @@ static void timers_init(void *p) {
     }
     if (0 != rdbmsg_request(p, rdbmsg_lookup_id ("ROUTE_NA"), timer_route,
                 rdbmsg_lookup_id ("GROUP_NA"), timer_stop_id)) {
-        fwlog (LOG_ERROR, "rdbmsg_request failed. events may not fire. Aborting (%d.%d.%d.%d)",
+        fwl (LOG_ERROR, p, "rdbmsg_request failed. events may not fire. Aborting (%d.%d.%d.%d)",
                 rdbmsg_lookup_id ("ROUTE_NA"), timer_route, 
                 rdbmsg_lookup_id ("GROUP_NA"), timer_stop_id);
         ctx->state = RDBFW_STATE_STOPALL;
@@ -278,7 +278,7 @@ static void timers_init(void *p) {
 static void timers_de_init(void *p) {
     ctx = p;
     
-    fwlog (LOG_INFO, "Destroy %s\n", ctx->uname);
+    fwl (LOG_INFO, p, "Destroy %s\n", ctx->uname);
     ctx->state = RDBFW_STATE_LOADED;
     
 
@@ -303,6 +303,7 @@ static void timers_stop(void *P) {
 }
 
 static void timers_start(void *P) {
+    ctx = P;
     int rc;
     int cnt = 0;
 
@@ -317,24 +318,24 @@ static void timers_start(void *P) {
         }
         if (rc == EAGAIN) {
             if (cnt > MAX_THREAD_RETRY) {
-                fwlog (LOG_ERROR, "Thread creation failed, MAX_THREAD_RETRY exusted\n");
+                fwl (LOG_ERROR, ctx, "Thread creation failed, MAX_THREAD_RETRY exusted\n");
                 ctx->state = RDBFW_STATE_STOPALL;
                 return;
             } 
             else {
                 cnt++;
-                fwlog (LOG_ERROR, "Thread creation failed, will retry\n");
+                fwl (LOG_ERROR, ctx, "Thread creation failed, will retry\n");
                 usleep (100000);
                 continue;
             }
         }
         else if (rc == EPERM) {
-            fwlog (LOG_ERROR, "Thread creation failed - missing permissions - aborting\n");
+            fwl (LOG_ERROR, ctx, "Thread creation failed - missing permissions - aborting\n");
             ctx->state = RDBFW_STATE_STOPALL;
             return;
         }
         else if (rc == EINVAL) {
-            fwlog (LOG_ERROR, "Thread creation failed - Invalid attribute - aborting\n");
+            fwl (LOG_ERROR, ctx, "Thread creation failed - Invalid attribute - aborting\n");
             ctx->state = RDBFW_STATE_STOPALL;
             return;
         }
@@ -357,7 +358,7 @@ static void *timer_thread(void *p)
 #ifdef USE_PRCTL
     prctl(PR_SET_NAME,"timers_slave\0",NULL,NULL,NULL);
 #endif
-    fwlog (LOG_INFO, "Starting timer thread @ %dHz\n",t_info->hz);
+    fwl (LOG_INFO, p, "Starting timer thread @ %dHz\n",t_info->hz);
 
     clock_gettime(CLOCK_REALTIME, &tnext);
 
@@ -367,14 +368,14 @@ static void *timer_thread(void *p)
         if (tnext.tv_nsec >= 1000000000) {
             tnext.tv_nsec -= 1000000000;
             tnext.tv_nsec += 1000000000 % t_info->hz; // avoid drift
-            fwlog (LOG_DEBUG, "drift avoidance %ld\n", 1000000000L % t_info->hz);
+            fwl (LOG_DEBUG, p, "drift avoidance %ld\n", 1000000000L % t_info->hz);
             tnext.tv_sec++;
         }
 
         sleep_time = s_ts_diff_time_ns(&tnow, &tnext, NULL);
         if (sleep_time <= -10000000000) { //over 10 seconds late - assume clock-drift.
             clock_gettime(CLOCK_REALTIME, &tnext); // 'resetting' timer
-            fwlog (LOG_INFO, "TIMERS Reset after long sleep\n");
+            fwl (LOG_INFO, p, "TIMERS Reset after long sleep\n");
         }
 
         tv.tv_sec = 0;
@@ -392,7 +393,7 @@ static void *timer_thread(void *p)
             // portable, simple way to wait for timer. 
             rc=pselect(0, NULL, NULL, NULL, &tv,NULL);
             if (rc != 0) {
-                fwlog (LOG_DEBUG, "rc = %d during select. Sperious timer may occured\n", rc);
+                fwl (LOG_DEBUG, p, "rc = %d during select. Sperious timer may occured\n", rc);
             }
         }
         // we do NOT want to emit if we are canceled 

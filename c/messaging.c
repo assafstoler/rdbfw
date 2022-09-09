@@ -230,7 +230,7 @@ int rdbmsg_request_custom ( void  *ctx, int from, int to, int group, int id,
     rdbmsg_dispatch_t    *d;
     // TODO set and protect max buf correctly!
     char buf[80];
-    /*fwlog (LOG_DEBUG, "%s ... in progress %d %d %d %d\n",
+    /*fwl_no_emit (LOG_DEBUG, NULL, "%s ... in progress %d %d %d %d\n",
             ((plugins_t *)(ctx))->name, from, to, group, id);
    */
     //TODO: once working,make this into a fn() 
@@ -396,7 +396,7 @@ void check_if_subscribed (void *data, void *user_ptr, int stage) {
     // in debugging context.
     assert (stage >= 0 && (stage < 4));
      
-    //fwlog (LOG_TRACE, "check: s %d\n", stage);
+    //fwl_no_emit (LOG_TRACE, NULL, "check: s %d\n", stage);
 
     if (stage == 0) {
         if (msg->from == route_na) { // all from possibilitied need to be checked)
@@ -578,7 +578,7 @@ int rdbmsg_free (plugins_t *ctx, rdbmsg_queue_t *q) {
     //            msg=&(q->msg);
     rdb_lock(ctx->empty_msg_store,__FUNCTION__);
     if (0 == rdb_insert(ctx->empty_msg_store, q)) {
-        fwlog_no_emit (LOG_ERROR, "failed to release buffer\n");
+        fwl_no_emit (LOG_ERROR, NULL, "failed to release buffer\n");
         rdb_unlock(ctx->empty_msg_store,__FUNCTION__);
         return -1;
     }
@@ -632,7 +632,7 @@ int emit_simple_cb (void *data, void *user_ptr) {
                 lock_errno = errno;
                 usleep(0);
                 if (lock_rc_try_cnt++) {
-                    fwlog_no_emit(LOG_WARN, "Can't lock message queue for %s for %d cycles\n",
+                    fwl_no_emit(LOG_WARN, NULL, "Can't lock message queue for %s for %d cycles\n",
                             ctx->uname, lock_rc_try_cnt);
                 }
             }
@@ -677,7 +677,7 @@ int emit_simple_cb (void *data, void *user_ptr) {
 
 emit_simple_err:
     //TODO: do we want to abort? report error somehow?
-    fwlog_no_emit (LOG_ERROR, "out of message buffers sending %d to %s\n",msg->id, ctx->uname);
+    fwl_no_emit (LOG_ERROR, NULL, "out of message buffers sending %d to %s\n",msg->id, ctx->uname);
     return RDB_CB_OK;
 }
 
@@ -732,7 +732,7 @@ int emit_cb (void *data, void *user_ptr) {
         } else if ( RDBMSG_USE_SHARED_FWALLOC == msg->use_fwalloc ) {
             if ( msg->data_ref ) {
                 if ( -1  == rdbfw_up_ref ( msg->data_ref, 1 ) ){
-                    fwlog_no_emit ( LOG_ERROR, "Fail to up_ref, message not sent!\n" );
+                    fwl_no_emit ( LOG_ERROR, NULL, "Fail to up_ref, message not sent!\n" );
                     return RDB_CB_OK;
                 }
                 ptr = msg->data_ref;
@@ -749,7 +749,7 @@ int emit_cb (void *data, void *user_ptr) {
         } 
         else {
             //TODO: Alloc!!!
-            fwlog_no_emit (LOG_ERROR, "out of memory sending %d to %s. message discarded\n",msg->id, ctx->uname);
+            fwl_no_emit (LOG_ERROR, NULL, "out of memory sending %d to %s. message discarded\n",msg->id, ctx->uname);
             q = NULL; // ensure we don't free a random pointer
             goto emit_err;
         }
@@ -762,7 +762,7 @@ int emit_cb (void *data, void *user_ptr) {
         q = calloc(1,sizeof(rdbmsg_queue_t)) ;
 #endif
         if (q == NULL) {
-            fwlog_no_emit (LOG_ERROR, "out of message buffers sending %d to %s\n",msg->id, ctx->uname);
+            fwl_no_emit (LOG_ERROR, NULL, "out of message buffers sending %d to %s\n",msg->id, ctx->uname);
             goto emit_err;
         }
         memset(q,0,sizeof(rdbmsg_queue_t));
@@ -780,7 +780,7 @@ int emit_cb (void *data, void *user_ptr) {
                 lock_errno = errno;
                 usleep(0);
                 if (lock_rc_try_cnt++) {
-                    fwlog_no_emit(LOG_WARN, "Can't lock message queue for %s for %d cycles\n",
+                    fwl_no_emit(LOG_WARN, NULL, "Can't lock message queue for %s for %d cycles\n",
                             ctx->uname, lock_rc_try_cnt);
                 }
             }
@@ -948,8 +948,8 @@ void rdbmsg_destroy_tree (void *data, void *user_ptr, int stage) {
     // can no longer log here as it'll emit UT message which from the log which will cause
     // circular deadlock
     //
-    //fwlog (LOG_DEBUG, "flushing %s %d\n", pool->name, stage);
-    //fwlog (LOG_INFO, "--Dropping pool %s\n", pool->name);
+    //fwl_no_emit (LOG_DEBUG, NULL, "flushing %s %d\n", pool->name, stage);
+    //fwl_no_emit (LOG_INFO, NULL, "--Dropping pool %s\n", pool->name);
     if (pool && pool->root[0]) rdb_flush(pool, unlink_rdbmsg_cb, NULL);
     pool->drop=1;
     return;

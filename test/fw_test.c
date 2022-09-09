@@ -97,7 +97,7 @@ void rdbfw_app_config_timers( void ) {
 // Alternatively, replace rdbfw_wait() with rdbfw_stop() ...
 // rdbfw_is_running can alwaye be inspected.
 //
-// Most rdbfw apps will not need anything more in main, however, things that with to
+// Most rdbfw apps will not need anything more in main, however, things that need to
 // interact with the framework externally (like unit-test) may find this a convenient
 // to use main to run external code
 int main(int argc, char *argv[]) {
@@ -121,10 +121,8 @@ int main(int argc, char *argv[]) {
             printf("Fatal: Error loading framework - Abort\n");
             exit(1);
         }
-        sleep(1);
         printf("is running %d\n", rdbfw_is_running());
-        rdbfw_stop();
-
+        rdbfw_wait();
         printf("is running %d\n", rdbfw_is_running());
     }
     else printf("-only-once-\n");

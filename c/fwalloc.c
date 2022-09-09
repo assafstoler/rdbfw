@@ -24,17 +24,17 @@ int main (int argc, char *argv[]) {
     uint8_t *ptr[3];
 
     logger = stdout;
-    fwlog(LOG_INFO, "Starting fwalloc tests\n");
+    fwl(LOG_INFO, NULL, "Starting fwalloc tests\n");
     rdbfw_alloc_init();
-    fwlog(LOG_INFO, "fwalloc init OK\n");
+    fwl(LOG_INFO, NULL, "fwalloc init OK\n");
     rc = rdbfw_alloc_prealloc (MTU, 1000, 1000, 100);
     if ( rc == -1 ) {
-        fwlog (LOG_ERROR, "Failed prealloc (MTU)\n");
+        fwl(LOG_ERROR, NULL, "Failed prealloc (MTU)\n");
         exit(1);
     }
     rc = rdbfw_alloc_prealloc (100, 1000, 1000, 100);
     if ( rc == -1 ) {
-        fwlog (LOG_ERROR, "Failed prealloc (100)\n");
+        fwl (LOG_ERROR, NULL, "Failed prealloc (100)\n");
         exit(1);
     }
     ptr[0] = rdbfw_alloc(MTU);
@@ -47,7 +47,7 @@ int main (int argc, char *argv[]) {
     rdbfw_free (ptr[1]);
     rdbfw_free (ptr[2]);
     rdb_free_prealloc();
-    fwlog(LOG_INFO, "fwalloc free OK\n");
+    fwl(LOG_INFO, NULL, "fwalloc free OK\n");
 
     exit(0);
 }
@@ -65,7 +65,7 @@ int rdbfw_alloc_init(void) {
     return 0;
 #else
     if (unittest_en == UT_ALLOC_INIT_1 || alloc_master_pool != NULL) {
-        fwlog ( LOG_WARN, "rdbfw_alloc_init called while initilized. call ignord\n" );
+        fwl ( LOG_WARN, NULL, "rdbfw_alloc_init called while initilized. call ignord\n" );
         return -1;
     }
 
@@ -77,7 +77,7 @@ int rdbfw_alloc_init(void) {
     pthread_mutex_unlock(&alloc_mutex);
 
     if (alloc_master_pool == NULL) {
-        fwlog ( LOG_ERROR, "Failed to register master alloc pool\n");
+        fwl ( LOG_ERROR, NULL, "Failed to register master alloc pool\n");
         return -1;
     }
         
@@ -92,7 +92,7 @@ int compare_block(void *old, void *new) {
     ktb = old;
     kta = new;
 
-    fwlog(LOG_DEBUG, "%p == %p %d! %p == %p %d!\n", kta->sb, ktb->sb,
+    fwl(LOG_DEBUG, NULL, "%p == %p %d! %p == %p %d!\n", kta->sb, ktb->sb,
             (kta->sb < ktb->sb) ? -1 : (kta->sb > ktb->sb) ? 1 : 0,
             kta->data, ktb->data,
             (kta->data < ktb->data) ? -1 : (kta->data > ktb->data) ? 1 : 0);
@@ -268,7 +268,7 @@ int rdbfw_alloc_prealloc (uint32_t sz, uint32_t count, uint32_t max_count, int h
         fwl (LOG_DEBUG, NULL, "sb == %p\n",sb);
         /*sb_all = calloc (1, sizeof (superblock_all_t));
         if (sb_all == NULL) {
-            fwlog ( LOG_ERROR, "Failure to allocate superblock(all) of %d bytes\n", am->sb_sz );
+            fwl ( LOG_ERROR, NULL, "Failure to allocate superblock(all) of %d bytes\n", am->sb_sz );
             if (add_on) {
                 am->sb_cnt--;
             }
@@ -300,7 +300,7 @@ int rdbfw_alloc_prealloc (uint32_t sz, uint32_t count, uint32_t max_count, int h
             blk = (void *) &sb->data_addr + ( j * gross_sz );
             blk->sb = sb;
             blk->data_addr = (void *) blk + offsetof (block_t, data);
-            //fwlog (LOG_DEBUG, "sizeof offset %p %p %d\n",blk, blk->data, offsetof (block_t, data));
+            //fwl (LOG_DEBUG, NULL, "sizeof offset %p %p %d\n",blk, blk->data, offsetof (block_t, data));
             if ( unittest_en == UT_ALLOC_PRE_8 || 0 == rdb_insert (am->free_pool, blk ) ) {
                 fwl (LOG_ERROR, NULL, "Unable to insert block record\n");
                 if (j) for ( k = 0 ; k < j; k++) {
@@ -325,7 +325,7 @@ int rdbfw_alloc_prealloc (uint32_t sz, uint32_t count, uint32_t max_count, int h
         }
     }
     /*if ( ( !add_on ) && 0 == rdb_insert (alloc_master_pool, am ) ) {
-        fwlog (LOG_ERROR, "Unable to insert alloc-master record\n");
+        fwl (LOG_ERROR, NULL, "Unable to insert alloc-master record\n");
         goto rdbfw_alloc_prealloc_err;
     }*/
 
@@ -358,10 +358,10 @@ void *rdbfw_alloc_no_emit(uint32_t size){
         // TODO: will rdb_iterate be faster (abort on 1st entry)
         
         blk_next = rdb_delete ( am->free_pool, 0 , NULL );
-        fwlog_no_emit (LOG_DEBUG,"Got %p\n", blk_next);
+        fwl_no_emit (LOG_DEBUG, NULL, "Got %p\n", blk_next);
         if ( blk_next == NULL && ( am->max_blocks_allowed > am->blocks_in_use ) ) {
             // we ran out - go alloc first
-            fwlog_no_emit (LOG_DEBUG_MORE,"More %d of %d!\n",am->blocks_in_use, am->max_blocks_allowed);
+            fwl_no_emit (LOG_DEBUG_MORE, NULL, "More %d of %d!\n",am->blocks_in_use, am->max_blocks_allowed);
             pthread_mutex_unlock(&alloc_mutex);
             rdbfw_alloc_prealloc (am->block_sz, 0, 0, 0);
             pthread_mutex_lock(&alloc_mutex);
@@ -369,23 +369,23 @@ void *rdbfw_alloc_no_emit(uint32_t size){
         }
         if ( blk_next != NULL ) {
             // we have a free unit
-            fwlog_no_emit (LOG_DEBUG_MORE,"Free Unit at %p!\n", blk_next);
+            fwl_no_emit (LOG_DEBUG_MORE, NULL, "Free Unit at %p!\n", blk_next);
             
-            fwlog_no_emit (LOG_DEBUG_MORE,"deliver %p SB=%p\n", &blk_next->data_addr,blk_next->sb);
+            fwl_no_emit (LOG_DEBUG_MORE, NULL, "deliver %p SB=%p\n", &blk_next->data_addr,blk_next->sb);
             am->blocks_free--;
             am->blocks_in_use ++;
             pthread_mutex_unlock(&alloc_mutex);
             blk_next->ref_ct = 1;
-            //fwlog_no_emit ( LOG_INFO, "RefSET %d %p\n", blk_next->ref_ct, &blk_next->ref_ct) ;
+            //fwl_no_emit ( LOG_INFO, NULL, "RefSET %d %p\n", blk_next->ref_ct, &blk_next->ref_ct) ;
             return blk_next->data_addr;
             
         }
         else {
-            fwlog_no_emit ( LOG_ERROR, "failed to allocate memory for new SB\n");
+            fwl_no_emit ( LOG_ERROR, NULL, "failed to allocate memory for new SB\n");
         }
     } 
     pthread_mutex_unlock(&alloc_mutex);
-    fwlog_no_emit (LOG_WARN,"rdbfw_alloc failure\n");
+    fwl_no_emit (LOG_WARN, NULL, "rdbfw_alloc failure\n");
     return NULL;
 #endif
 }
@@ -410,10 +410,10 @@ void *rdbfw_alloc(uint32_t size){
         // TODO: will rdb_iterate be faster (abort on 1st entry)
         
         blk_next = rdb_delete ( am->free_pool, 0 , NULL );
-        fwlog(LOG_DEBUG,"Got %p\n", blk_next);
+        fwl(LOG_DEBUG, NULL, "Got %p\n", blk_next);
         if ( blk_next == NULL && ( am->max_blocks_allowed > am->blocks_in_use ) ) {
             // we ran out - go alloc first
-            fwlog(LOG_DEBUG_MORE,"More %d of %d!\n",am->blocks_in_use, am->max_blocks_allowed);
+            fwl(LOG_DEBUG_MORE, NULL, "More %d of %d!\n",am->blocks_in_use, am->max_blocks_allowed);
             pthread_mutex_unlock(&alloc_mutex);
             rdbfw_alloc_prealloc (am->block_sz, 0, 0, 0);
             pthread_mutex_lock(&alloc_mutex);
@@ -421,9 +421,9 @@ void *rdbfw_alloc(uint32_t size){
         }
         if ( blk_next != NULL ) {
             // we have a free unit
-            fwlog(LOG_DEBUG_MORE,"Free Unit at %p!\n", blk_next);
+            fwl(LOG_DEBUG_MORE, NULL, "Free Unit at %p!\n", blk_next);
             
-            fwlog(LOG_DEBUG_MORE,"deliver %p SB=%p\n", &blk_next->data_addr,blk_next->sb);
+            fwl(LOG_DEBUG_MORE, NULL, "deliver %p SB=%p\n", &blk_next->data_addr,blk_next->sb);
             am->blocks_free--;
             am->blocks_in_use ++;
             pthread_mutex_unlock(&alloc_mutex);
@@ -433,11 +433,11 @@ void *rdbfw_alloc(uint32_t size){
             
         }
         else {
-            fwlog ( LOG_ERROR, "failed to allocate memory for new SB\n");
+            fwl ( LOG_ERROR, NULL, "failed to allocate memory for new SB\n");
         }
     } 
     pthread_mutex_unlock(&alloc_mutex);
-    while (1) fwlog (LOG_WARN,"rdbfw_alloc failure\n");
+    while (1) fwl (LOG_WARN,  NULL, "rdbfw_alloc failure\n");
     return NULL;
 #endif
 }
@@ -476,7 +476,7 @@ void rdbfw_free(void *ptr){
     if (ptr) {
         blk =  ptr - offsetof (block_t, data);
     } else {
-        fwlog (LOG_ERROR, "attempt to free a null pointer\n");
+        fwl (LOG_ERROR, NULL, "attempt to free a null pointer\n");
         return ;
     }
     pthread_mutex_lock(&alloc_mutex);
@@ -488,11 +488,11 @@ void rdbfw_free(void *ptr){
 
     //    pthread_mutex_lock(&alloc_mutex);
 
-        //fwlog ( LOG_DEBUG_MORE, "internal free %p\nsb=%p\n", ptr, blk->sb );
+        //fwl ( LOG_DEBUG_MORE, NULL, "internal free %p\nsb=%p\n", ptr, blk->sb );
 
         am = blk->sb->am;
         if ( am == NULL ) {
-            fwlog (LOG_ERROR, "Can't free block of size %u\n", blk->sb->block_sz);
+            fwl (LOG_ERROR, NULL, "Can't free block of size %u\n", blk->sb->block_sz);
             pthread_mutex_unlock(&alloc_mutex);
             return ;
         }
@@ -504,7 +504,7 @@ void rdbfw_free(void *ptr){
         return ;
     }
     if ( tmp_ref_ct > 0 ) {
-        fwlog ( LOG_DEBUG_MORE, "internal down_ref %d (free) %p\nsb=%p\n", tmp_ref_ct, ptr, blk->sb );
+        fwl ( LOG_DEBUG_MORE, NULL, "internal down_ref %d (free) %p\nsb=%p\n", tmp_ref_ct, ptr, blk->sb );
         pthread_mutex_unlock(&alloc_mutex);
         return;
         // we already reduced the ref-ct
@@ -519,7 +519,7 @@ void rdbfw_free(void *ptr){
 
 static int superblock_delete_cb(void *data_ptr, void *user_ptr) {
     superblock_t *sb = ( superblock_t * ) data_ptr;
-        fwlog (LOG_INFO, "sb != %p\n",sb);
+        fwl (LOG_INFO, NULL, "sb != %p\n",sb);
     return RDB_CB_DELETE_NODE;
 }
 
@@ -527,18 +527,18 @@ __attribute__((unused)) static int free_prealloc_cb(void *data_ptr, void *user_p
     alloc_master_t *am = (alloc_master_t *) data_ptr;
 
     if ( am->blocks_in_use ) {
-        fwlog (LOG_ERROR, "free_prealloc called while blocks are still in usage\n");
+        fwl (LOG_ERROR, NULL, "free_prealloc called while blocks are still in usage\n");
         return RDB_CB_OK;
     }
     if ( ! am->blocks_free ) {
-        fwlog (LOG_ERROR, "free_prealloc called while none are allocated ( size = %d )\n", am->block_sz);
+        fwl (LOG_ERROR, NULL, "free_prealloc called while none are allocated ( size = %d )\n", am->block_sz);
         return RDB_CB_OK;
     }
     rdb_iterate ( am->superblock_pool, 0, superblock_delete_cb, NULL, NULL, NULL);
     rdb_drop_pool ( am->free_pool );
     rdb_drop_pool ( am->superblock_pool );
 
-    fwlog (LOG_INFO, "freed superblock(s): %d\n", am->block_sz);
+    fwl (LOG_INFO, NULL, "freed superblock(s): %d\n", am->block_sz);
     return RDB_CB_DELETE_NODE;
     //return RDB_CB_OK;
 }

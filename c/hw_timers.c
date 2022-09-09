@@ -98,7 +98,7 @@ static void timers_stop_all(void){
     pthread_mutex_lock(&ctx->msg_mutex);
     for (i = 0; i < MAX_TIMERS; i++) {
         if (t_info[i].hz != 0) {
-            fwlog (LOG_INFO, "Stoping timer thread %d\n", i);
+            fwl (LOG_INFO, NULL, "Stoping timer thread %d\n", i);
             timer_delete(t_info[i].hw_id);
             t_info[i].hz=0;
             // Unlike timers.c here we do not memset as timer threads may still be called.
@@ -108,7 +108,7 @@ static void timers_stop_all(void){
     // unlocking here after (hopefully) all pending timers are gone
     pthread_mutex_unlock(&ctx->msg_mutex);
             
-    fwlog (LOG_DEBUG, "Done\n");
+    fwl (LOG_DEBUG, NULL, "Done\n");
 }
 
 static void *timers_main(void *p) {
@@ -146,13 +146,13 @@ static void *timers_main(void *p) {
 
         pthread_mutex_unlock(&ctx->msg_mutex);
         do {
-            fwlog (LOG_DEBUG_MORE, "%s: Timed Work\n", ctx->name);                  // do some work...
+            fwl (LOG_DEBUG_MORE, p, "%s: Timed Work\n", ctx->name);                  // do some work...
             rdb_lock(ctx->msg_q_pool,__FUNCTION__);
             q = rdb_delete(ctx->msg_q_pool, 0, NULL);
             rdb_unlock(ctx->msg_q_pool,__FUNCTION__);
 
             if (q) {    // process message
-                fwlog (LOG_DEBUG_MORE, "%s: Received message grp.id = %d.%d\n",
+                fwl (LOG_DEBUG_MORE, p, "%s: Received message grp.id = %d.%d\n",
                         ctx->name, q->msg.group, q->msg.id);
                 if (q->msg.id == timer_stop_id) {
                     timer_id = q->msg.len - timer_tick[0];
@@ -195,13 +195,13 @@ static void *timers_main(void *p) {
 
                         rc = timer_create(CLOCK_REALTIME, &se,(timer_t *)  &(t_info[timer_id].hw_id));
                         if (rc != 0) { 
-                            fwlog (LOG_ERROR, "FATAL: timer_create failed (%d: %s) - Aborting\n", rc, strerror(errno));
+                            fwl (LOG_ERROR, p, "FATAL: timer_create failed (%d: %s) - Aborting\n", rc, strerror(errno));
                             ctx->state = RDBFW_STATE_SOFTSTOPALL;
                         } 
                         else {
                             rc = timer_settime( t_info[timer_id].hw_id, 0, &ts, NULL);
                             if (rc != -0) { 
-                                fwlog (LOG_ERROR, "FATAL: timer_settime failed (%d: %s) - Aborting\n", rc, strerror(errno));
+                                fwl (LOG_ERROR, p, "FATAL: timer_settime failed (%d: %s) - Aborting\n", rc, strerror(errno));
                                 ctx->state = RDBFW_STATE_SOFTSTOPALL;
                             }
                         }
@@ -287,7 +287,7 @@ static void timers_init(void *p) {
 
     if (0 != rdbmsg_request(p, route_na, timer_route,
                 rdbmsg_lookup_id ("GROUP_NA"), timer_start_id)) {
-        fwlog (LOG_ERROR, "rdbmsg_request failed. events may not fire. Aborting (%d.%d.%d.%d)",
+        fwl (LOG_ERROR, p, "rdbmsg_request failed. events may not fire. Aborting (%d.%d.%d.%d)",
                 route_na, timer_route, 
                 rdbmsg_lookup_id ("GROUP_NA"), timer_start_id);
         ctx->state = RDBFW_STATE_STOPALL;
@@ -295,7 +295,7 @@ static void timers_init(void *p) {
     }
     if (0 != rdbmsg_request(p, route_na, timer_route,
                 rdbmsg_lookup_id ("GROUP_NA"), timer_stop_id)) {
-        fwlog (LOG_ERROR, "rdbmsg_request failed. events may not fire. Aborting (%d.%d.%d.%d)",
+        fwl (LOG_ERROR, p, "rdbmsg_request failed. events may not fire. Aborting (%d.%d.%d.%d)",
                 route_na, timer_route, 
                 rdbmsg_lookup_id ("GROUP_NA"), timer_stop_id);
         ctx->state = RDBFW_STATE_STOPALL;
@@ -307,12 +307,12 @@ static void timers_de_init(void *p) {
     ctx = p;
     int rc;
     
-    fwlog (LOG_INFO, "Destroy %s\n", ctx->uname);
+    fwl (LOG_INFO, p, "Destroy %s\n", ctx->uname);
     ctx->state = RDBFW_STATE_LOADED;
     
     rc = pthread_attr_destroy(attrp);
 
-    fwlog (LOG_DEBUG, "rc = %d\n", rc);
+    fwl (LOG_DEBUG, p, "rc = %d\n", rc);
 
 
 }
@@ -353,24 +353,24 @@ static void timers_start(void *P) {
         }
         if (rc == EAGAIN) {
             if (cnt > MAX_THREAD_RETRY) {
-                fwlog (LOG_ERROR, "Thread creation failed, MAX_THREAD_RETRY exusted\n");
+                fwl (LOG_ERROR, P, "Thread creation failed, MAX_THREAD_RETRY exusted\n");
                 ctx->state = RDBFW_STATE_STOPALL;
                 return;
             } 
             else {
                 cnt++;
-                fwlog (LOG_ERROR, "Thread creation failed, will retry\n");
+                fwl (LOG_ERROR, P, "Thread creation failed, will retry\n");
                 usleep (100000);
                 continue;
             }
         }
         else if (rc == EPERM) {
-            fwlog (LOG_ERROR, "Thread creation failed - missing permissions - aborting\n");
+            fwl (LOG_ERROR, P, "Thread creation failed - missing permissions - aborting\n");
             ctx->state = RDBFW_STATE_STOPALL;
             return;
         }
         else if (rc == EINVAL) {
-            fwlog (LOG_ERROR, "Thread creation failed - Invalid attribute - aborting\n");
+            fwl (LOG_ERROR, P, "Thread creation failed - Invalid attribute - aborting\n");
             ctx->state = RDBFW_STATE_STOPALL;
             return;
         }

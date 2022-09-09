@@ -14,12 +14,17 @@
 #include "utils.h"
 #include "log.h"
 
+char log_log_buf[256];
 
 uint32_t log_level = LOG_WARN;
 
 pthread_mutex_t  log_mutex;
 FILE *logger = NULL;
 
+int rdbmsg_lookup_id (const char *str){
+}
+int rdbmsg_emit_log (int from, int to, int group, int id, int length, void *data, int unlock){
+}
 
 int main(int argc, char *argv[]) {
 
