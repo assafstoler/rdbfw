@@ -525,7 +525,7 @@ static int rdb_dump_cb (void *data, void *user_ptr) {
 #define PLUGIN_LIB_PREFIX "lib"
 #define PLUGIN_LCL_LIB_PREFIX "./lib"
 #define PLUGIN_LIB_PREFIX_LEN (sizeof(PLUGIN_LCL_LIB_PREFIX))
-#define PLUGIN_LIB_SUFFIX ".so"
+#define PLUGIN_LIB_SUFFIX ".so.1"
 #define PLUGIN_LIB_SUFFIX_LEN (sizeof(PLUGIN_LIB_SUFFIX))
 
 int register_plugin(

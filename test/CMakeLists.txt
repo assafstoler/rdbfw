@@ -12,6 +12,8 @@ INSTALL(TARGETS fn_test
 ADD_LIBRARY ( event_skeleton SHARED event_driven_skeleton.c )
 target_link_libraries ( event_skeleton PRIVATE pthread dl rdb )
 target_include_directories ( event_skeleton PRIVATE $<TARGET_PROPERTY:rdbfwlib,INCLUDE_DIRECTORIES> )
+set_target_properties(event_skeleton PROPERTIES VERSION ${RDBFWLIB_DEFAULT_VERSION_STRING} SOVERSION ${RDBFWLIB_DEFAULT_VERSION_MAJOR} )
+
 INSTALL(TARGETS event_skeleton
     LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_PREFIX}/include/rdbfw
@@ -20,6 +22,8 @@ INSTALL(TARGETS event_skeleton
 ADD_LIBRARY ( cpp_skeleton SHARED cpp_skeleton.cpp )
 target_link_libraries ( cpp_skeleton PRIVATE pthread dl rdb rdbfwlib )
 target_include_directories ( cpp_skeleton PRIVATE $<TARGET_PROPERTY:rdbfwlib,INCLUDE_DIRECTORIES> )
+set_target_properties(cpp_skeleton PROPERTIES VERSION ${RDBFWLIB_DEFAULT_VERSION_STRING} SOVERSION ${RDBFWLIB_DEFAULT_VERSION_MAJOR} )
+
 INSTALL(TARGETS cpp_skeleton
     LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_PREFIX}/include/rdbfw

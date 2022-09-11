@@ -34,7 +34,7 @@ ADD_DEFINITIONS(-DWAKEUP_ACCOUNTING)
 
 find_package( PkgConfig REQUIRED)
 find_package( Threads REQUIRED )
-        
+       
 set (HEADERS
     ${HEADERS}
     ${CMAKE_CURRENT_SOURCE_DIR/../include}
@@ -121,6 +121,11 @@ endif()
 
 #set_target_properties(rdbfwlib PROPERTIES PUBLIC_HEADER "rdbfw.h;log.h;ansi.h;fwalloc.h;messaging.h;utils.h")
 set_target_properties(rdbfwlib PROPERTIES PUBLIC_HEADER "${FW_HEADERS}")
+
+set_target_properties(rdbfwlib PROPERTIES VERSION ${RDBFWLIB_DEFAULT_VERSION_STRING} SOVERSION ${RDBFWLIB_DEFAULT_VERSION_MAJOR} )
+set_target_properties(hw_timers PROPERTIES VERSION ${RDBFWLIB_DEFAULT_VERSION_STRING} SOVERSION ${RDBFWLIB_DEFAULT_VERSION_MAJOR} )
+set_target_properties(timers PROPERTIES VERSION ${RDBFWLIB_DEFAULT_VERSION_STRING} SOVERSION ${RDBFWLIB_DEFAULT_VERSION_MAJOR} )
+
 INSTALL(TARGETS rdbfwlib hw_timers timers
         LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
         ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
