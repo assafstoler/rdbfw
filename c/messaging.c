@@ -700,11 +700,31 @@ int rdbmsg_emit_simple(int from, int to, int group, int id, int data){
     msg.msg_q_pool = NULL;
     msg.msg_mutex = NULL;
     msg.msg_condition = NULL;
+    msg.refs=NULL;
     msg.emit_ns = clock_gettime_uns();
     rdb_iterate(ppc,  0, emit_simple_cb, (void *) &msg, NULL, NULL); 
     rdb_unlock(ppc,__FUNCTION__);
 
     return (msg.emitted);
+}
+
+int emit_count_cb (void *data, void *user_ptr) {
+    plugins_t *ctx;
+    rdbmsg_internal_msg_t *msg;
+
+    ctx = (plugins_t *) data;
+    msg = (rdbmsg_internal_msg_t *) user_ptr;
+
+    if (!ctx) return RDB_CB_OK;
+    if (!ctx->msg_dispatch_root) return RDB_CB_OK;
+
+    msg->rc = 0; // reset our flag in case it's set
+    check_if_subscribed (ctx->msg_dispatch_root, user_ptr, 0);
+
+    if (msg->rc == RDBMSG_RC_IS_SUBSCRIBER) {
+        (*msg->refs)++;
+    }
+    return RDB_CB_OK;
 }
 
 int emit_cb (void *data, void *user_ptr) {
@@ -808,6 +828,7 @@ int emit_cb (void *data, void *user_ptr) {
         pthread_cond_signal(msg->msg_condition);
         pthread_mutex_unlock(msg->msg_mutex);
         }
+        //TOOO: whyis this here?
         if (ctx->msg_pending_count > 40000) {
             printf("* %d - ",ctx->msg_pending_count);
             usleep(0);
@@ -888,11 +909,59 @@ int rdbmsg_emit (int from, int to, int group, int id, int length, void *data, vo
         msg.data_cleanup = data_cleanup;
         msg.emit_ns = clock_gettime_uns();
         msg.data_ref = NULL;
+        msg.refs = NULL;
         rdb_iterate(ppc,  0, emit_cb, (void *) &msg, NULL, NULL); 
         rdb_unlock(ppc,__FUNCTION__);
     }
 
     return (msg.emitted);
+}
+int rdbmsg_emit_with_ref (int from, int to, int group, int id, int length, void *data, void (*data_cleanup)(void *), int *ref ) {
+    
+    rdbmsg_internal_msg_t msg;
+
+    //TODO: make sure all are within their respected range
+    if ( NULL != ppc ) {
+        rdb_lock(ppc,__FUNCTION__);
+        debug("-- %d.%d.%d.%d\n", from, to, group, id);
+        msg.from = from;
+        msg.to = to;
+        msg.group = group;
+        msg.id = id;
+        msg.len = length;
+        msg.data = data;
+        msg.legacy = 0;
+        msg.rc = 0;
+        msg.emitted=0;
+        msg.msg_q_pool = NULL;
+        msg.msg_mutex = NULL;
+        msg.msg_condition = NULL;
+        msg.data_cleanup = data_cleanup;
+        msg.emit_ns = clock_gettime_uns();
+        msg.data_ref = NULL;
+        if ( ref != NULL ) {msg.refs = ref;
+            *(msg.refs)=*ref;
+            rdb_iterate(ppc,  0, emit_count_cb, (void *) &msg, NULL, NULL); 
+            fwl_no_emit(LOG_TRACE, NULL, "rdbmsg_emit_with_refs produced %d hits\n",*msg.refs);
+            rdb_iterate(ppc,  0, emit_cb, (void *) &msg, NULL, NULL); 
+        } else {
+            fwl_no_emit (LOG_ERROR, NULL, "rdbmsg_emit_with_refs called with NULL ref pointer. %d. message discarded\n",msg.id);
+        }
+        rdb_unlock(ppc,__FUNCTION__);
+    }
+
+    return (msg.emitted);
+}
+
+//utility fn. allocate a ref counter and set it to val.
+int *rdbmsg_gen_ref (int val){
+    int *ref;
+    ref = malloc(sizeof(int));
+    if (!ref) {
+        return NULL;
+    }
+    *ref=val;
+    return ref;
 }
 
 void unlink_rdbmsg_cb (void *data, void *user_ptr) {

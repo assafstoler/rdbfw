@@ -49,6 +49,7 @@ typedef struct rdbmsg_msg_s {
     int             legacy;     // Legacy message will be (also) transleted to legacy netlink messag system 
     int             use_fwalloc; // use framework allocator for emit_message()
     void            (*data_cleanup)(void *); // function used to free the data section, if any NULL is ok (flat)
+    int             *refs;
 } rdbmsg_msg_t;
 
 typedef struct rdbmsg_internal_msg_s {
@@ -62,6 +63,8 @@ typedef struct rdbmsg_internal_msg_s {
     int             legacy;     // Legacy message will be (also) transleted to legacy netlink messag system 
     int             use_fwalloc; // use framework allocator for emit_message()
     void            (*data_cleanup)(void *); // function used to free the data section, if any NULL is ok (flat)
+    int             *refs;      // pre-filled with recepiant count and reported to client - last client to get to zero
+                                // free's the user data protected bu refs, and impload it's message block
     int             rc;         // this is used as a return code for message dispatch lookup.
     int             emitted;    // count for how many clients this message has been emitted
     // related to WIP - custom message queues
@@ -130,6 +133,8 @@ int rdbmsg_request_custom(void  *ctx, int from, int to, int group, int id,
         pthread_cond_t *msg_condition );
 int rdbmsg_emit_simple(int from, int to, int group, int id, int data);
 int rdbmsg_emit (int from, int to, int group, int id, int length, void *data, void (*data_cleanup)(void *));
+int rdbmsg_emit_with_ref (int from, int to, int group, int id, int length, void *data, void (*data_cleanup)(void *), int *);
+int *rdbmsg_gen_ref (int val);
 int rdbmsg_emit_log (int from, int to, int group, int id, int length, void *data, int unlock);
 int rdbmsg_delay_HZ(int new_Hz);
 int rdbmsg_free (plugins_t *ctx, rdbmsg_queue_t *q);

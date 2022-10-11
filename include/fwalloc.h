@@ -7,8 +7,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define MAX_RDBFW_ALLOC_SZ ( 1048576 * 16 )
-#define MAX_RDBFW_SUPERALLOC_SZ ( 1048576 * 64 ) // (max) 64M per allocation
+#define MAX_RDBFW_ALLOC_SZ ( 1048576 * 32 )
+#define MAX_RDBFW_SUPERALLOC_SZ ( 1048576 * 128 ) // (max) 64M per allocation
 //#define MAX_RDBFW_SUPERALLOC_SZ 120 // (max) 1M per allocation
 
 /* rdbfw-alloc data explained:

@@ -382,6 +382,8 @@ void *rdbfw_alloc_no_emit(uint32_t size){
         }
         else {
             fwl_no_emit ( LOG_ERROR, NULL, "failed to allocate memory for new SB\n");
+            pthread_mutex_unlock(&alloc_mutex);
+            return NULL;
         }
     } 
     pthread_mutex_unlock(&alloc_mutex);
@@ -434,10 +436,12 @@ void *rdbfw_alloc(uint32_t size){
         }
         else {
             fwl ( LOG_ERROR, NULL, "failed to allocate memory for new SB\n");
+            pthread_mutex_unlock(&alloc_mutex);
+            return NULL;
         }
     } 
     pthread_mutex_unlock(&alloc_mutex);
-    while (1) fwl (LOG_WARN,  NULL, "rdbfw_alloc failure\n");
+    while (1) { fwl (LOG_WARN,  NULL, "rdbfw_alloc failure\n"); sleep (1); }
     return NULL;
 #endif
 }
