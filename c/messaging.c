@@ -835,7 +835,7 @@ int emit_cb (void *data, void *user_ptr) {
             printf("%d\n",ctx->msg_pending_count);
         }
         fwl_no_emit (LOG_DEBUG_MORE, NULL, "msg emitted to %s (id=%d %s)\n",
-                ctx->uname, q->msg.id, "**");
+                ctx->uname, q->msg.id, rdbmsg_lookup_string(q->msg.id));
         return RDB_CB_OK; // no need to continue testing ths plug in
     } //else info("%s not subscribed (id=%d)\n",ctx->name, msg->id);
 

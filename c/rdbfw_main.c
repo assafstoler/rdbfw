@@ -863,13 +863,14 @@ int rdbfw_stop (void) {
 }
 // wait for natural stoppage (signaled by one of the active modules)
 int rdbfw_wait (void) {
-    int *rc;
+    int *rc=NULL;
     if (rdbfw_active) {
         pthread_mutex_unlock(&main_mutex);
         pthread_join (main_thread, (void **) &rc);
         rdbfw_active = 0;
     }
-    return (*rc);
+    if (rc) return (*rc);
+    return 0;
 }
 
 static int rc;
