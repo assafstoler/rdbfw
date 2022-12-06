@@ -169,15 +169,18 @@ static int load_plugin_cb (void *data, void *user_ptr) {
 
     if (unittest_en != UT_LOAD_PLUGIN_3) {
         p->plugin_info = (rdbfw_plugin_api_t *) dlsym(p->handle, buf);
-        if ((p->plugin_info == NULL) ||
-                ((eptr = dlerror()) != NULL))  {
-            fwl (LOG_ERROR, p, "failed dlsym() : %s - %s\n", eptr, buf);
+        if ((p->plugin_info == NULL)) { 
+            eptr = dlerror() ;
+            fwl (LOG_ERROR, p, "failed dlsym(1) : %s - %s\n", eptr, buf);
+            eptr = NULL;
             goto load_plugin_cb_err;
         }
     }
-    if ((p->plugin_info == NULL) || ((eptr = dlerror()) != NULL))  {
-        fwl (LOG_ERROR, p, "failed dlsym() : %s - %s\n", eptr, buf);
-        eptr=dlerror();
+    if (p->plugin_info == NULL) {
+        eptr = dlerror();
+        fwl (LOG_ERROR, p, "failed dlsym(2) : %s - %s\n", eptr, buf);
+        eptr = NULL;
+        //eptr=dlerror();
         goto load_plugin_cb_err;
     }
 
