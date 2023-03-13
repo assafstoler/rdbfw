@@ -170,35 +170,7 @@ static void skel_event_start(void *p) {
     int cnt = 0;
 
     pthread_mutex_lock(&ctx->startup_mutex);
-    while (1) {
-        rc = pthread_create( &skel_event_thread, &attr, skel_event, NULL);
-        if (rc == 0) {
-            break;
-        }
-        if (rc == EAGAIN) {
-            if (cnt > MAX_THREAD_RETRY) {
-                fwl (LOG_ERROR, p, "Thread creation failed, MAX_THREAD_RETRY exusted\n");
-                ctx->state = RDBFW_STATE_STOPALL;
-                return;
-            } 
-            else {
-                cnt++;
-                fwl (LOG_ERROR, p, "Thread creation failed, will retry\n");
-                usleep (100000);
-                continue;
-            }
-        }
-        else if (rc == EPERM) {
-            fwl (LOG_ERROR, p, "Thread creation failed - missing permissions - aborting\n");
-            ctx->state = RDBFW_STATE_STOPALL;
-            return;
-        }
-        else if (rc == EINVAL) {
-            fwl (LOG_ERROR, p, "Thread creation failed - Invalid attribute - aborting\n");
-            ctx->state = RDBFW_STATE_STOPALL;
-            return;
-        }
-    }
+    if (-1 == rdbfw_pthread_create (&skel_event_thread, &attr, skel_event, NULL, 10, 1, 100000, ctx)) return;
     skeleton_main_thread_started = 1;
    
     pthread_mutex_lock(&ctx->startup_mutex);

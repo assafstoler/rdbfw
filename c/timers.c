@@ -311,35 +311,7 @@ static void timers_start(void *P) {
 
     memset(t_info,0,sizeof(t_info));
 
-    while (1) {
-        rc = pthread_create( &timers_main_thread, &attr, timers_main, NULL);
-        if (rc == 0) {
-            break;
-        }
-        if (rc == EAGAIN) {
-            if (cnt > MAX_THREAD_RETRY) {
-                fwl (LOG_ERROR, ctx, "Thread creation failed, MAX_THREAD_RETRY exusted\n");
-                ctx->state = RDBFW_STATE_STOPALL;
-                return;
-            } 
-            else {
-                cnt++;
-                fwl (LOG_ERROR, ctx, "Thread creation failed, will retry\n");
-                usleep (100000);
-                continue;
-            }
-        }
-        else if (rc == EPERM) {
-            fwl (LOG_ERROR, ctx, "Thread creation failed - missing permissions - aborting\n");
-            ctx->state = RDBFW_STATE_STOPALL;
-            return;
-        }
-        else if (rc == EINVAL) {
-            fwl (LOG_ERROR, ctx, "Thread creation failed - Invalid attribute - aborting\n");
-            ctx->state = RDBFW_STATE_STOPALL;
-            return;
-        }
-    }
+    if (-1 == rdbfw_pthread_create (&timers_main_thread, &attr, timers_main, NULL, 10, 1, 100000, ctx)) return;
 
     pthread_mutex_lock(&ctx->startup_mutex);
     ctx->state = RDBFW_STATE_RUNNING;

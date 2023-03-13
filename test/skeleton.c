@@ -79,35 +79,7 @@ static void skeleton_start(void *p) {
     int cnt = 0;
 
     pthread_mutex_lock(&ctx->startup_mutex);
-    while (1) {
-        rc = pthread_create( &skeleton_main_thread, &attr, skeleton_main, NULL);
-        if (rc == 0) {
-            break;
-        }
-        if (rc == EAGAIN) {
-            if (cnt > MAX_THREAD_RETRY) {
-                fwlog (LOG_ERROR, "Thread creation failed, MAX_THREAD_RETRY exusted\n");
-                ctx->state = RDBFW_STATE_STOPALL;
-                return;
-            } 
-            else {
-                cnt++;
-                fwlog (LOG_ERROR, "Thread creation failed, will retry\n");
-                usleep (100000);
-                continue;
-            }
-        }
-        else if (rc == EPERM) {
-            fwlog (LOG_ERROR, "Thread creation failed - missing permissions - aborting\n");
-            ctx->state = RDBFW_STATE_STOPALL;
-            return;
-        }
-        else if (rc == EINVAL) {
-            fwlog (LOG_ERROR, "Thread creation failed - Invalid attribute - aborting\n");
-            ctx->state = RDBFW_STATE_STOPALL;
-            return;
-        }
-    }
+    if (-1 == rdbfw_pthread_create (&skeleton_main_thread, &attr, skeleton_main, NULL, 10, 1, 100000, ctx)) return;
     
     pthread_mutex_lock(&ctx->startup_mutex);
     ctx->state = RDBFW_STATE_RUNNING;

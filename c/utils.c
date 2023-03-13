@@ -9,10 +9,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 
 // filloing 3 includes are here to satisy logging
 #include <pthread.h>
 #include "rdb/rdb.h"
+#include "rdbfw/rdbfw.h"
 #include "log.h"
 
 #include "utils.h"
@@ -439,3 +441,51 @@ int fd_set_flag(int fd, int flag, int command) {
 
     return fcntl(fd, F_SETFL, flags) != -1;
 }
+
+int rdbfw_pthread_create(pthread_t *thread,
+                          const pthread_attr_t *attr,
+                          void *(*start_routine)(void *),
+                          void *restrict arg,
+                          int max_attempts,
+                          int terminate_on_fail,
+                          int retry_delay,
+                          plugins_t *p) {
+    int retry_ct=0;
+    int rc;
+    while (1) {
+        rc = pthread_create( thread, attr, start_routine, arg);
+        if (rc == 0) {
+            return 0;
+        }
+        if (rc == EAGAIN) {
+            if (retry_ct > max_attempts) {
+                fwl (LOG_ERROR,p, "Thread creation failed, max attempts (%d) exusted\n", max_attempts);
+                if (terminate_on_fail) p->state = RDBFW_STATE_STOPALL;
+                return -1;
+            } 
+            else {
+                retry_ct++;
+                fwl (LOG_ERROR, p, "Thread creation failed, will retry\n");
+                usleep (retry_delay);
+                continue;
+            }
+        }
+        else if (rc == EPERM) {
+            if (terminate_on_fail) {
+                fwl (LOG_ERROR, p, "Thread creation failed (%s) - missing permissions - aborting\n", p->uname);
+                p->state = RDBFW_STATE_STOPALL;
+            } 
+            else fwl (LOG_ERROR, p, "Thread creation failed (%s) - missing permissions\n", p->uname);
+            return -1;
+        }
+        else if (rc == EINVAL) {
+            if (terminate_on_fail) {
+                fwl (LOG_ERROR, p, "Thread creation failed (%s) - Invalid attribute - aborting\n", p->uname);
+                p->state = RDBFW_STATE_STOPALL;
+            }
+            else fwl (LOG_ERROR, p, "Thread creation failed (%s) - Invalid attribute\n", p->uname);
+            return -1;
+        }
+    }
+}
+    

@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <rdb/rdb.h>
+#include "rdbfw/rdbfw.h"
 #include "utils.h"
 #include "log.h"
 

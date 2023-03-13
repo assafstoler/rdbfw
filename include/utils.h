@@ -40,6 +40,14 @@ int is_ts_lesser_equal(struct timespec *subject, struct timespec *challenger);
 char *snprint_ts_time (struct timespec *ts, char *string, int len);
 int fd_set_flag(int fd, int flag, int set);
 
+int rdbfw_pthread_create ( pthread_t *thread,
+                          const pthread_attr_t *attr,
+                          void *(*start_routine)(void *),
+                          void *arg,
+                          int max_attempts,
+                          int terminate_on_fail,
+                          int retry_delay,
+                          plugins_t *p);
 char *hex_log(uint8_t *ptr, int len);
 #define FLAG_SET 1
 #define FLAG_UNSET 0
