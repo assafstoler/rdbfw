@@ -344,7 +344,7 @@ static void timers_start(void *P) {
 
     pthread_mutex_lock(&ctx->startup_mutex);
     memset(t_info,0,sizeof(t_info));
-    if (-1 == rdbfw_pthread_create (&timers_main_thread, &attr, timers_main, NULL, 10, 1, 100000, ctx)) return;
+    if (-1 == rdbfw_pthread_create (&timers_main_thread, &attr, timers_main, 10, 1, 100000, ctx)) return;
     pthread_mutex_lock(&ctx->startup_mutex);
     ctx->state = RDBFW_STATE_RUNNING;
     pthread_mutex_unlock(&ctx->startup_mutex);

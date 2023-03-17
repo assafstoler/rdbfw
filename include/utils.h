@@ -43,7 +43,6 @@ int fd_set_flag(int fd, int flag, int set);
 int rdbfw_pthread_create ( pthread_t *thread,
                           const pthread_attr_t *attr,
                           void *(*start_routine)(void *),
-                          void *arg,
                           int max_attempts,
                           int terminate_on_fail,
                           int retry_delay,

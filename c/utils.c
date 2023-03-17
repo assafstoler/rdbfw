@@ -445,7 +445,6 @@ int fd_set_flag(int fd, int flag, int command) {
 int rdbfw_pthread_create(pthread_t *thread,
                           const pthread_attr_t *attr,
                           void *(*start_routine)(void *),
-                          void *restrict arg,
                           int max_attempts,
                           int terminate_on_fail,
                           int retry_delay,
@@ -453,7 +452,7 @@ int rdbfw_pthread_create(pthread_t *thread,
     int retry_ct=0;
     int rc;
     while (1) {
-        rc = pthread_create( thread, attr, start_routine, arg);
+        rc = pthread_create( thread, attr, start_routine, p);
         if (rc == 0) {
             return 0;
         }

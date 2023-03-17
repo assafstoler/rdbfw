@@ -170,7 +170,7 @@ static void skel_event_start(void *p) {
     int cnt = 0;
 
     pthread_mutex_lock(&ctx->startup_mutex);
-    if (-1 == rdbfw_pthread_create (&skel_event_thread, &attr, skel_event, NULL, 10, 1, 100000, ctx)) return;
+    if (-1 == rdbfw_pthread_create (&skel_event_thread, &attr, skel_event, 10, 1, 100000, ctx)) return;
     skeleton_main_thread_started = 1;
    
     pthread_mutex_lock(&ctx->startup_mutex);
