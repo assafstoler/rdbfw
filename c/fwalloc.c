@@ -441,7 +441,7 @@ void *rdbfw_alloc(uint32_t size){
         }
     } 
     pthread_mutex_unlock(&alloc_mutex);
-    while (1) { fwl (LOG_WARN,  NULL, "rdbfw_alloc failure\n"); sleep (1); }
+    fwl (LOG_WARN,  NULL, "rdbfw_alloc failure\n");
     return NULL;
 #endif
 }
