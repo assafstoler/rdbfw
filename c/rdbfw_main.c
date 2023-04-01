@@ -146,7 +146,7 @@ static int load_plugin_cb (void *data, void *user_ptr) {
 #ifdef STATIC_BUILD
         p->handle = dlopen (NULL , RTLD_LAZY| RTLD_GLOBAL);
 #else
-        fwl (LOG_INFO, p, "attempting to load plugin (dlopen()) %s - %s\n", p->pathname, eptr);
+        fwl (LOG_TRACE, p, "attempting to load plugin (dlopen()) %s - %s\n", p->pathname, eptr);
         p->handle = dlopen (p->pathname , RTLD_LAZY| RTLD_GLOBAL);
 #endif
         if (p->handle == NULL) {
@@ -204,7 +204,7 @@ static int load_plugin_cb (void *data, void *user_ptr) {
     free(buf);
 
     p->state = RDBFW_STATE_LOADED;
-    fwl (LOG_INFO, p, "Loaded %p, %s\n", p, p->name);
+    fwl (LOG_INFO, p, "Loaded %s at %p\n", p->name, p);
 
     return RDB_CB_OK;
 
@@ -544,6 +544,8 @@ int register_plugin(
     char *buf;
     int i;
     rdbmsg_queue_t *q;
+    if (library_name_override) fwl(LOG_INFO, NULL, "registering %s from %s\n", name, library_name_override);
+    else fwl(LOG_INFO, NULL, "registering %s\n", name);
 
     if (name == NULL) {
         goto register_plugin_err;
@@ -623,6 +625,7 @@ int register_plugin(
         strcat (plugin_node->pathname, name);
     }
     strcat (plugin_node->pathname, PLUGIN_LIB_SUFFIX);
+    //fwl(LOG_INFO, NULL, "library pathname == %s %s\n",plugin_node->pathname, library_name_override);
 
     plugin_node->plugin_info = NULL;
     plugin_node->state = RDBFW_STATE_NULL;
