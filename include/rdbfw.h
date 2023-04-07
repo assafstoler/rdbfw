@@ -164,7 +164,7 @@ int register_plugin(
         const char *library_name_override
         );
 
-int rdbfw_main(int argc, char *argv[], const char *app_name);
+int rdbfw_main(int argc, char *argv[], const char *app_name, int sustain);
 
 void rdbfw_app_help(void);
 int rdbfw_app_process_opts (int argc, char **argcv);

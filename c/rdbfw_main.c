@@ -42,6 +42,7 @@ char *lib_prefix = NULL;
 char log_log_buf[256];
 char sig_log_buf[256];
 const char *rdbfw_app_name = NULL;
+static int dl_sustain = 0;
 
 uint32_t log_level = LOG_WARN;
 uint32_t DEBUG_FLAGS = 0;
@@ -142,18 +143,16 @@ static int load_plugin_cb (void *data, void *user_ptr) {
     }
 
 
-    {
 #ifdef STATIC_BUILD
-        p->handle = dlopen (NULL , RTLD_LAZY| RTLD_GLOBAL);
+    p->handle = dlopen (NULL , RTLD_LAZY| RTLD_GLOBAL);
 #else
-        fwl (LOG_TRACE, p, "attempting to load plugin (dlopen()) %s - %s\n", p->pathname, eptr);
-        p->handle = dlopen (p->pathname , RTLD_LAZY| RTLD_GLOBAL);
+    fwl (LOG_TRACE, p, "attempting to load plugin (dlopen()) %s - %s\n", p->pathname, eptr);
+    p->handle = dlopen (p->pathname , RTLD_LAZY| RTLD_GLOBAL);
 #endif
-        if (p->handle == NULL) {
-            eptr = dlerror();
-            fwl (LOG_ERROR, p, "failed to load plugin (dlopen()) %s - %s\n", p->pathname, eptr);
-            goto load_plugin_cb_err;
-        }
+    if (p->handle == NULL) {
+        eptr = dlerror();
+        fwl (LOG_ERROR, p, "failed to load plugin (dlopen()) %s - %s\n", p->pathname, eptr);
+        goto load_plugin_cb_err;
     }
 
     if (unittest_en != UT_LOAD_PLUGIN_2) {
@@ -227,11 +226,11 @@ static int drop_plugin_cb (void *data, void *user_ptr){
     plugins_t *p;
     p = (plugins_t *) data;
     int rc=0;
-    fwl (LOG_DEBUG, p, "dlclose(%s)\n", p->uname);
 
     if (p->handle) {
-        rc = dlclose(p->handle);
-        fwl (LOG_DEBUG, p, "dlclose(%s) %d\n", p->uname, rc);
+        if ( ! dl_sustain) 
+            rc = dlclose(p->handle);
+        fwl_no_emit (LOG_WARN, p, "dlclose(%s) %d\n", p->uname, rc);
     }
 
     p->state = RDBFW_STATE_NULL;
@@ -966,7 +965,7 @@ int rdbfw_add_debug_flag (int flag) {
     return 0;
 }
 
-int rdbfw_main (int argc, char *argv[], const char *app_name)
+int rdbfw_main (int argc, char *argv[], const char *app_name, int sustain)
 {
     int rc;
     int show_help = 0;
@@ -976,6 +975,7 @@ int rdbfw_main (int argc, char *argv[], const char *app_name)
     rdb_pool_t *plugin_pool;
 
     rdbfw_app_name = app_name;
+    dl_sustain = sustain;
 
     log_level = LOG_WARN;
 

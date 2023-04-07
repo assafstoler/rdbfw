@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
 #ifdef USE_PRCTL
     prctl(PR_SET_NAME,"fw_test-main\0",NULL,NULL,NULL);
 #endif
-    if (0 != (rc = rdbfw_main (argc, argv, "fw_test"))) {
+    if (0 != (rc = rdbfw_main (argc, argv, "fw_test", 0))) {
         if ( RDBFW_ERR_HELP_REQUESTED != rc) {
             printf("Fatal: Error loading framework - Abort\n");
         }
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
 
         fwl_no_emit(LOG_INFO, NULL,"Re-running\n");
 
-        if (0 != rdbfw_main (argc, argv, "fw_test 2")) {
+        if (0 != rdbfw_main (argc, argv, "fw_test 2", 0)) {
             printf("Fatal: Error loading framework - Abort\n");
             exit(1);
         }
