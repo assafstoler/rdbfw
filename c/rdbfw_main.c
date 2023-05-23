@@ -53,6 +53,7 @@ static int break_requested = 0;
 static int break_requested_by_user = 0; // signify cause of break so can return correct error to calling process
 static int signal_trapped = 0;
 static int rdbfw_active = 0;
+static int trap_signals = 1;
 
 
 static pthread_mutex_t   main_mutex;
@@ -965,7 +966,7 @@ int rdbfw_add_debug_flag (int flag) {
     return 0;
 }
 
-int rdbfw_main (int argc, char *argv[], const char *app_name, int sustain, int log_level_override)
+int rdbfw_main (int argc, char *argv[], const char *app_name, int sustain, int log_level_override, int arg_trap_signals)
 {
     int rc;
     int show_help = 0;
@@ -973,6 +974,7 @@ int rdbfw_main (int argc, char *argv[], const char *app_name, int sustain, int l
     args_copy_t ac;
     pthread_attr_t attr;
     rdb_pool_t *plugin_pool;
+    trap_signals = arg_trap_signals;
 
     rdbfw_app_name = app_name;
     dl_sustain = sustain;
@@ -995,16 +997,18 @@ int rdbfw_main (int argc, char *argv[], const char *app_name, int sustain, int l
     // default handler
     struct sigaction act ;
 
-    act.sa_handler = sig_func;
-    sigemptyset (&act.sa_mask);
-    act.sa_flags = 0;
+    if (trap_signals) {
+        act.sa_handler = sig_func;
+        sigemptyset (&act.sa_mask);
+        act.sa_flags = 0;
 
-    sigaction (SIGPIPE, &act, NULL);
-    sigaction (SIGUSR1, &act, NULL);
-    sigaction (SIGUSR2, &act, NULL);
-    sigaction (SIGQUIT, &act, NULL);
-    sigaction (SIGTERM, &act, NULL);
-    sigaction (SIGINT, &act, NULL);
+        sigaction (SIGPIPE, &act, NULL);
+        sigaction (SIGUSR1, &act, NULL);
+        sigaction (SIGUSR2, &act, NULL);
+        sigaction (SIGQUIT, &act, NULL);
+        sigaction (SIGTERM, &act, NULL);
+        sigaction (SIGINT, &act, NULL);
+    }
 
     // Just until we opened up our logger
     if ( -1 != log_level_override) log_level = log_level_override;
@@ -1205,9 +1209,11 @@ int rdbfw_main (int argc, char *argv[], const char *app_name, int sustain, int l
 static void fw_term(int rc, rdb_pool_t *plugin_pool) {
     struct sigaction noact;
 
-    noact.sa_handler = SIG_DFL;
-    sigemptyset (&noact.sa_mask);
-    noact.sa_flags = 0;
+    if (trap_signals) {
+        noact.sa_handler = SIG_DFL;
+        sigemptyset (&noact.sa_mask);
+        noact.sa_flags = 0;
+    }
 
     if (rc <= -7) {
         rdb_lock(plugin_pool, __FUNCTION__);
@@ -1231,12 +1237,14 @@ static void fw_term(int rc, rdb_pool_t *plugin_pool) {
         //rdbmsg_clean();
     }
     if (rc <= -1) {
-        sigaction (SIGPIPE, &noact, NULL);
-        sigaction (SIGUSR1, &noact, NULL);
-        sigaction (SIGUSR2, &noact, NULL);
-        sigaction (SIGQUIT, &noact, NULL);
-        sigaction (SIGTERM, &noact, NULL);
-        sigaction (SIGINT, &noact, NULL);
+        if (trap_signals) {
+            sigaction (SIGPIPE, &noact, NULL);
+            sigaction (SIGUSR1, &noact, NULL);
+            sigaction (SIGUSR2, &noact, NULL);
+            sigaction (SIGQUIT, &noact, NULL);
+            sigaction (SIGTERM, &noact, NULL);
+            sigaction (SIGINT, &noact, NULL);
+        }
 
         // for any error, we also need to clean up the basics
         rdb_flush (plugin_pool, NULL, NULL);
