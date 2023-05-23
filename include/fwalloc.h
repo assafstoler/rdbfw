@@ -4,6 +4,7 @@
 
 #ifndef __FWALLOC__H__
 #define __FWALLOC__H__
+#include <rdbfw/log.h>
 #ifdef __cplusplus
 extern "C" {
 #endif

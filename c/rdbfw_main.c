@@ -965,7 +965,7 @@ int rdbfw_add_debug_flag (int flag) {
     return 0;
 }
 
-int rdbfw_main (int argc, char *argv[], const char *app_name, int sustain)
+int rdbfw_main (int argc, char *argv[], const char *app_name, int sustain, int log_level_override)
 {
     int rc;
     int show_help = 0;
@@ -977,7 +977,8 @@ int rdbfw_main (int argc, char *argv[], const char *app_name, int sustain)
     rdbfw_app_name = app_name;
     dl_sustain = sustain;
 
-    log_level = LOG_WARN;
+    if ( -1 != log_level_override) log_level = log_level_override;
+    else log_level = LOG_WARN;
 
     pthread_mutex_init (&main_mutex, NULL);
     pthread_mutex_lock(&main_mutex);
@@ -1006,7 +1007,9 @@ int rdbfw_main (int argc, char *argv[], const char *app_name, int sustain)
     sigaction (SIGINT, &act, NULL);
 
     // Just until we opened up our logger
-    log_level = LOG_INFO;
+    if ( -1 != log_level_override) log_level = log_level_override;
+    else log_level = LOG_INFO;
+
     logger = stdout;
     fwl (LOG_INFO, NULL, "--Mark--\n");
     const char* ut_str = getenv("RDBFW_UT");
