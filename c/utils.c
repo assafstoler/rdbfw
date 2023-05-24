@@ -13,8 +13,8 @@
 
 // filloing 3 includes are here to satisy logging
 #include <pthread.h>
-#include "rdb/rdb.h"
-#include "rdbfw/rdbfw.h"
+#include <rdb/rdb.h>
+#include "rdbfw.h"
 #include "log.h"
 
 #include "utils.h"
