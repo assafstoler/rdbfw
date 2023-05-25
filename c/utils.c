@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <pthread.h>
 
 // filloing 3 includes are here to satisy logging
 #include <pthread.h>
