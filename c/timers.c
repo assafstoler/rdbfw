@@ -56,6 +56,7 @@ typedef struct t_info_s {
     int counter;
     int stop;
     plugins_t *ctx;
+    int pipe_fd[2];
 } t_info_t;
 
 static t_info_t t_info[MAX_TIMERS];
@@ -102,6 +103,9 @@ static void timers_stop_all(void){
         if (t_info[i].hz != 0) {
             fwl (LOG_INFO, NULL, "Stoping timer thread %d\n", i);
             //pthread_cancel(timers[i]);
+            t_info[i].stop=1;
+            char buf[]="T";
+            write (t_info[i].pipe_fd[1], buf, 1);
             pthread_join(timers[i], NULL);
             memset(&t_info[i],0, sizeof (t_info[i]));
             memset(&timers[i],0, sizeof (timers[i]));
@@ -157,8 +161,10 @@ static void *timers_main(void *p) {
                 fwl (LOG_DEBUG_MORE, p, "%s: Received message grp.id = %d.%d\n",
                         ctx->name, q->msg.group, q->msg.id);
                 if (q->msg.id == timer_stop_id) {
+                    char buf[]="T";
                     timer_id = q->msg.len - timer_tick[0];
                     t_info[timer_id].stop = 1;//pthread_cancel(timers[timer_id]);
+                    write (t_info[timer_id].pipe_fd[1], buf, 1);
                     pthread_join(timers[timer_id], NULL);
                     memset(&t_info[timer_id],0, sizeof (t_info[timer_id]));
                     memset(&timers[timer_id],0, sizeof (timers[timer_id]));
@@ -177,6 +183,7 @@ static void *timers_main(void *p) {
                         t_info[timer_id].hz = q->msg.len;
                         t_info[timer_id].id = timer_id + timer_tick[0];
                         t_info[timer_id].ctx = p;
+                        pipe(t_info[timer_id].pipe_fd);
                         while (1) {
                             rc = pthread_create( &timers[timer_id], &attr, timer_thread, (void *)&t_info[timer_id]);
                             if (rc == 0) {
@@ -330,6 +337,7 @@ static void *timer_thread(void *t_info_p)
     struct timespec tv, tnext, tnow;
     int rc;
     int64_t sleep_time = 0;
+    fd_set rdfs;
     
 #ifdef USE_PRCTL
     prctl(PR_SET_NAME,"timers_slave\0",NULL,NULL,NULL);
@@ -367,9 +375,19 @@ static void *timer_thread(void *t_info_p)
                 tv.tv_sec ++;
             }
             // portable, simple way to wait for timer. 
-            rc=pselect(0, NULL, NULL, NULL, &tv,NULL);
+            int nfds = 0;
+            FD_ZERO (&rdfs);
+            FD_SET ( t_info->pipe_fd[0], &rdfs );
+            if (nfds < t_info->pipe_fd[0]) nfds = t_info->pipe_fd[0];
+            nfds++;
+            rc=pselect(nfds, &rdfs, NULL, NULL, &tv,NULL);
             if (rc != 0) {
-                fwl (LOG_DEBUG, ctx, "rc = %d during select. Sperious timer may occured\n", rc);
+                if (FD_ISSET (t_info->pipe_fd[0], &rdfs)) {
+                    char buf[1];
+                    rc = read(t_info->pipe_fd[0], &buf, 1);
+                } else{
+                    fwl (LOG_DEBUG, ctx, "rc = %d during select. Sperious timer may occured\n", rc);
+                }
             }
         }
         // we do NOT want to emit if we are canceled 
