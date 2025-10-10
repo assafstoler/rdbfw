@@ -100,6 +100,7 @@ typedef struct rdbfw_plugin_api_s {
     void (*state)(void *);
     void (*signal)(void *);
     void (*opt_help)(void *);
+    void (*status)(void *); //1HZ status printout pulled by framework
 } rdbfw_plugin_api_t;
 
 typedef enum {

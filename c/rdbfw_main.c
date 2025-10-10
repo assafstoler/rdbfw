@@ -82,7 +82,16 @@ static void fw_term(int rc, rdb_pool_t *plugin_pool);
 //
 
 char *pluging_type_print_name(plugins_t *p) {
-	return (p->name);
+    return (p->name);
+}
+
+static int status_cb(void *data, void *user_ptr) {
+    plugins_t *p;
+    p = (plugins_t *) data;
+    if ((*p->plugin_info).status) {
+        (*p->plugin_info).status(p);
+    }
+    return RDB_CB_OK;
 }
 
 static int help_cb(void *data, void *user_ptr) {
@@ -888,6 +897,7 @@ static int rc;
 void *rdbfw_main_loop (void *plugin_pool) {
     char sbuf[8096];
     struct timespec main_timeout;
+    struct timespec verbose_timeout;
 
     //pthread_mutex_lock(&main_mutex);
 #ifdef USE_PRCTL
@@ -895,11 +905,14 @@ void *rdbfw_main_loop (void *plugin_pool) {
 #endif
     clock_gettime(CLOCK_REALTIME, &main_timeout);
     main_timeout.tv_sec += automated_test;
+    clock_gettime(CLOCK_REALTIME, &verbose_timeout);
+    verbose_timeout.tv_sec += 1;
 
     while (running (plugin_pool)) {
         rc = 0;
         while (rc == 0) {
             if (automated_test) rc = pthread_cond_timedwait (&main_condition, &main_mutex, &main_timeout);
+            else if (log_level >= LOG_INFO) rc = pthread_cond_timedwait (&main_condition, &main_mutex, &verbose_timeout);
             else rc = pthread_cond_wait(&main_condition, &main_mutex);
 
             if (signal_trapped || break_requested || stopall_requested(plugin_pool)) rc = 1;
@@ -908,6 +921,14 @@ void *rdbfw_main_loop (void *plugin_pool) {
         if (signal_trapped) {
             rdb_iterate(plugin_pool,  1, relay_signal_cb, NULL, NULL, NULL);
             signal_trapped = 0;
+            if (! break_requested) {
+                continue;
+            }
+        }
+        else if (rc == ETIMEDOUT) {
+            fwl(LOG_INFO,NULL,"1Hz module query begin\n");
+            rdb_iterate(plugin_pool,  1, status_cb, NULL, NULL, NULL);
+            verbose_timeout.tv_sec += 1;
             if (! break_requested) {
                 continue;
             }
