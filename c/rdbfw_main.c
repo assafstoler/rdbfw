@@ -377,7 +377,7 @@ static int stop_unittest_plugin_cb (void *data, void *user_ptr) {
         return RDB_CB_OK;
     }
     if (p->state == RDBFW_STATE_RUNNING || p->state == RDBFW_STATE_SOFTSTOPALL) {
-        fwl (LOG_INFO, p, "stopping %s\n", p->name);
+        fwl (LOG_INFO, p, "(Framework is) stopping %s\n", p->name);
         if ((*p->plugin_info).stop)  (*p->plugin_info).stop(p);
         pthread_mutex_lock(&p->msg_mutex);
         pthread_cond_signal(&p->msg_condition);
@@ -385,7 +385,7 @@ static int stop_unittest_plugin_cb (void *data, void *user_ptr) {
         while (p->state != RDBFW_STATE_STOPPED) {
             usleep(0);
         }
-        fwl (LOG_INFO, p, "%s\n", p->name);
+        fwl (LOG_INFO, p, "%s Stopped \n", p->name);
         return RDB_CB_OK;
     }
     else {
@@ -404,7 +404,7 @@ static int stop_timers_plugin_cb (void *data, void *user_ptr) {
         // this one only does timers.
         // NOTE: it may be timers.c or hw_timers.c or ios_timers or alike. watch not to
         //       name other modules with the string "timers", or change this code.
-        fwl (LOG_INFO, p, "stopping %s\n", p->name);
+        fwl (LOG_INFO, p, "(Framework is) stopping %s\n", p->name);
         //p->state = RDBFW_STATE_STOPPING;
         if ((*p->plugin_info).stop)  (*p->plugin_info).stop(p);
         pthread_mutex_lock(&p->msg_mutex);
@@ -413,7 +413,7 @@ static int stop_timers_plugin_cb (void *data, void *user_ptr) {
         while (p->state != RDBFW_STATE_STOPPED) {
             usleep(0);
         }
-        fwl (LOG_INFO, p, "%s\n", p->name);
+        fwl (LOG_INFO, p, "%s Stopped \n", p->name);
         return RDB_CB_OK;
     }
     else {
@@ -434,7 +434,7 @@ static int stop_plugin_cb (void *data, void *user_ptr) {
     }
     if (p->state == RDBFW_STATE_RUNNING || p->state == RDBFW_STATE_SOFTSTOPALL) {
         // all others
-        fwl (LOG_INFO, p, "stopping %s\n", p->name);
+        fwl (LOG_INFO, p, "(Framework is) stopping %s\n", p->name);
         //p->state = RDBFW_STATE_STOPPING;
         if ((*p->plugin_info).stop)  (*p->plugin_info).stop(p);
         pthread_mutex_lock(&p->msg_mutex);
@@ -443,7 +443,7 @@ static int stop_plugin_cb (void *data, void *user_ptr) {
         while (p->state != RDBFW_STATE_STOPPED) {
             usleep(0);
         }
-        fwl (LOG_INFO, p, "%s\n", p->name);
+        fwl (LOG_INFO, p, "%s Stopped\n", p->name);
         return RDB_CB_OK;
     }
     else {
