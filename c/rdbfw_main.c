@@ -147,8 +147,13 @@ static int load_plugin_cb (void *data, void *user_ptr) {
 #ifdef STATIC_BUILD
     p->handle = dlopen (NULL , RTLD_LAZY| RTLD_GLOBAL);
 #else
-    fwl (LOG_TRACE, p, "attempting to load plugin (dlopen()) %s - %s\n", p->pathname, eptr);
-    p->handle = dlopen (p->pathname , RTLD_LAZY| RTLD_GLOBAL);
+    fwl (LOG_WARN, p, "Now attempting to load plugin (dlopen()) %s - %s\n", p->pathname, eptr);
+    if (strncmp (p->pathname , "lib?" , 4)==0) {
+        p->handle = dlopen (NULL , RTLD_LAZY| RTLD_GLOBAL);
+        fwl (LOG_WARN, p, "bypass enabled %s - %s\n", p->pathname, eptr);
+    }
+    else
+        p->handle = dlopen (p->pathname , RTLD_LAZY| RTLD_GLOBAL);
 #endif
     if (p->handle == NULL) {
         eptr = dlerror();
