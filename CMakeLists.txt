@@ -82,6 +82,7 @@ else()
     set(LIBSUFFIX "")
     #set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}64)
 endif()
+set(CMAKE_INSTALL_PREFIX /usr)
 set(INSTALL_LIB_DIR     lib${LIBSUFFIX} CACHE PATH "Installation directory for libraries")
 mark_as_advanced(INSTALL_LIB_DIR)
 
