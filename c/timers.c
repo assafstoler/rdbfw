@@ -259,7 +259,7 @@ static void timers_init(void *p) {
     ctx->state = RDBFW_STATE_INITIALIZED;
 
     if (0 != rdbmsg_request(p, rdbmsg_lookup_id ("ROUTE_NA"), timer_route,
-                rdbmsg_lookup_id ("GROUP_NA"), timer_start_id)) {
+                rdbmsg_lookup_id ("GROUP_TIMERS"), timer_start_id)) {
         fwl (LOG_ERROR, p, "rdbmsg_request failed. events may not fire. Aborting (%d.%d.%d.%d)",
                 rdbmsg_lookup_id ("ROUTE_NA"), timer_route, 
                 rdbmsg_lookup_id ("GROUP_NA"), timer_start_id);
@@ -267,7 +267,7 @@ static void timers_init(void *p) {
         return;
     }
     if (0 != rdbmsg_request(p, rdbmsg_lookup_id ("ROUTE_NA"), timer_route,
-                rdbmsg_lookup_id ("GROUP_NA"), timer_stop_id)) {
+                rdbmsg_lookup_id ("GROUP_TIMERS"), timer_stop_id)) {
         fwl (LOG_ERROR, p, "rdbmsg_request failed. events may not fire. Aborting (%d.%d.%d.%d)",
                 rdbmsg_lookup_id ("ROUTE_NA"), timer_route, 
                 rdbmsg_lookup_id ("GROUP_NA"), timer_stop_id);
@@ -306,8 +306,6 @@ static void timers_stop(void *P) {
 
 static void timers_start(void *P) {
     ctx = P;
-    int rc;
-    int cnt = 0;
 
     pthread_mutex_lock(&ctx->startup_mutex);
 
@@ -374,7 +372,7 @@ static void *timer_thread(void *t_info_p)
         // we do NOT want to emit if we are canceled 
         //if (break_requested) break;
         //pthread_testcancel();
-        //fwlog_no_emit(LOG_WARN, "CORE_EMIT\n");
+        //fwl_no_emit(LOG_WARN, NULL, "CORE_EMIT %d,%d\n", timer_group, t_info->id);
         rdbmsg_emit_simple(route_na, 
                 route_na,
                 timer_group,

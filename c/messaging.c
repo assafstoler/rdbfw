@@ -25,8 +25,9 @@ uint64_t wake_count_limit;
 static pthread_t awake_sleepers_thread;
 
 static rdb_pool_t *msg_type_pool=NULL;
-static uint32_t route_na = 0;
-static uint32_t route_idx_next = 0;
+static uint32_t rdbmsg_invalid_value = 0;
+static uint32_t route_na = 1;
+static uint32_t route_idx_next = 1;
 static uint32_t route_idx_max = 1023;
 
 static uint32_t group_na = 2048;
@@ -154,7 +155,7 @@ int rdbmsg_register_msg_type (const char *type, const char *msg_str){
         msg->string[63] = 0;
         if ( strcmp ( "route", type ) == 0 ) {
             if ( route_idx_next <= route_idx_max ) {
-                msg->value = route_idx_next++;
+                msg->value = ++route_idx_next;
             }
             else {
                 fwl_no_emit (LOG_ERROR, NULL, "Out of Route's while attempting to register message\n");
@@ -164,7 +165,7 @@ int rdbmsg_register_msg_type (const char *type, const char *msg_str){
         }
         else if ( strcmp ( "group", type ) == 0 ) {
             if ( group_idx_next <= group_idx_max ) {
-                msg->value = group_idx_next++;
+                msg->value = ++group_idx_next;
             }
             else {
                 fwl_no_emit (LOG_ERROR, NULL, "Out of Groups while attempting to register message\n");
@@ -174,7 +175,7 @@ int rdbmsg_register_msg_type (const char *type, const char *msg_str){
         }
         else if ( strcmp ( "id", type ) == 0 ) {
             if ( id_idx_next <= id_idx_max ) {
-                msg->value = id_idx_next++;
+                msg->value = ++id_idx_next;
             }
             else {
                 fwl_no_emit (LOG_ERROR, NULL, "Out of ID's while attempting to register message\n");
@@ -238,6 +239,11 @@ int rdbmsg_request_custom ( void  *ctx, int from, int to, int group, int id,
 
     if ( -1 == from || -1 == to || -1 == group || -1 == id) {
         fwl_no_emit ( LOG_ERROR, ctx, "BAD ID? %d:%d:%d:%d\n", from, to, group, id);
+        return -1;
+    }
+    if ( rdbmsg_invalid_value == from || rdbmsg_invalid_value == to ||
+            rdbmsg_invalid_value == group || rdbmsg_invalid_value == id) {
+        fwl_no_emit ( LOG_ERROR, ctx, "INVALID ID (used un-initialized)? %d:%d:%d:%d\n", from, to, group, id);
         return -1;
     }
 
