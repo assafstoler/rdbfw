@@ -41,7 +41,7 @@ static uint32_t id_idx_max = 65535;
 static pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;
 
 int rdbmsg_init (rdb_pool_t *plugin_pool) {
-    route_idx_next = 0;
+    route_idx_next = 1;
     group_idx_next = 2048;
     id_idx_next = 3096;
 
@@ -155,7 +155,7 @@ int rdbmsg_register_msg_type (const char *type, const char *msg_str){
         msg->string[63] = 0;
         if ( strcmp ( "route", type ) == 0 ) {
             if ( route_idx_next <= route_idx_max ) {
-                msg->value = ++route_idx_next;
+                msg->value = route_idx_next++;
             }
             else {
                 fwl_no_emit (LOG_ERROR, NULL, "Out of Route's while attempting to register message\n");
@@ -165,7 +165,7 @@ int rdbmsg_register_msg_type (const char *type, const char *msg_str){
         }
         else if ( strcmp ( "group", type ) == 0 ) {
             if ( group_idx_next <= group_idx_max ) {
-                msg->value = ++group_idx_next;
+                msg->value = group_idx_next++;
             }
             else {
                 fwl_no_emit (LOG_ERROR, NULL, "Out of Groups while attempting to register message\n");
@@ -175,7 +175,7 @@ int rdbmsg_register_msg_type (const char *type, const char *msg_str){
         }
         else if ( strcmp ( "id", type ) == 0 ) {
             if ( id_idx_next <= id_idx_max ) {
-                msg->value = ++id_idx_next;
+                msg->value = id_idx_next++;
             }
             else {
                 fwl_no_emit (LOG_ERROR, NULL, "Out of ID's while attempting to register message\n");

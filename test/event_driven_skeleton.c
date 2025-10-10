@@ -170,18 +170,22 @@ static void skel_event_start(void *p) {
     int cnt = 0;
 
     pthread_mutex_lock(&ctx->startup_mutex);
-    if (-1 == rdbfw_pthread_create (&skel_event_thread, &attr, skel_event, 10, 1, 100000, ctx)) return;
+    if (-1 == rdbfw_pthread_create (&skel_event_thread, &attr, skel_event, 10, 1, 100000, ctx)){
+        fwl (LOG_FATAL, p, "FAILED to create skel thread\n");
+        return;
+    }
     skeleton_main_thread_started = 1;
    
     pthread_mutex_lock(&ctx->startup_mutex);
     ctx->state = RDBFW_STATE_RUNNING;
     pthread_mutex_unlock(&ctx->startup_mutex);
 
-    rdbmsg_emit_simple(route_skel,
+    rc  = rdbmsg_emit_simple(route_skel,
                 rdbmsg_lookup_id ("ROUTE_MDL_TIMERS"),
                 rdbmsg_lookup_id ("GROUP_TIMERS"),
                 rdbmsg_lookup_id ("ID_TIMER_START"),
                 20 );
+    fwl (LOG_WARN,NULL, "Time request returned %d\n", rc);
 }
 
 static void skel_event_stop(void *pp) {

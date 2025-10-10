@@ -76,6 +76,7 @@ static int timer_stop_id;
 static int timer_ack_id;
 static int timer_tick[MAX_TIMERS];
 
+static int route_na;
 
 static int find_free_timer() {
     int i;
@@ -256,13 +257,16 @@ static void timers_init(void *p) {
 //    pthread_cond_init(&ctx->msg_condition, NULL);
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+    route_na = rdbmsg_lookup_id ("ROUTE_NA");
+
     ctx->state = RDBFW_STATE_INITIALIZED;
 
     if (0 != rdbmsg_request(p, rdbmsg_lookup_id ("ROUTE_NA"), timer_route,
                 rdbmsg_lookup_id ("GROUP_TIMERS"), timer_start_id)) {
         fwl (LOG_ERROR, p, "rdbmsg_request failed. events may not fire. Aborting (%d.%d.%d.%d)",
                 rdbmsg_lookup_id ("ROUTE_NA"), timer_route, 
-                rdbmsg_lookup_id ("GROUP_NA"), timer_start_id);
+                rdbmsg_lookup_id ("GROUP_TIMERS"), timer_start_id);
         ctx->state = RDBFW_STATE_STOPALL;
         return;
     }
@@ -270,7 +274,7 @@ static void timers_init(void *p) {
                 rdbmsg_lookup_id ("GROUP_TIMERS"), timer_stop_id)) {
         fwl (LOG_ERROR, p, "rdbmsg_request failed. events may not fire. Aborting (%d.%d.%d.%d)",
                 rdbmsg_lookup_id ("ROUTE_NA"), timer_route, 
-                rdbmsg_lookup_id ("GROUP_NA"), timer_stop_id);
+                rdbmsg_lookup_id ("GROUP_TIMERS"), timer_stop_id);
         ctx->state = RDBFW_STATE_STOPALL;
         return;
     }
@@ -326,7 +330,6 @@ static void *timer_thread(void *t_info_p)
     struct timespec tv, tnext, tnow;
     int rc;
     int64_t sleep_time = 0;
-    int route_na = rdbmsg_lookup_id ("ROUTE_NA");
     
 #ifdef USE_PRCTL
     prctl(PR_SET_NAME,"timers_slave\0",NULL,NULL,NULL);
