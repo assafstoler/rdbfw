@@ -55,6 +55,7 @@ typedef struct t_info_s {
     int id;
     int counter;
     int stop;
+    plugins_t *ctx;
 } t_info_t;
 
 static t_info_t t_info[MAX_TIMERS];
@@ -174,6 +175,7 @@ static void *timers_main(void *p) {
                         int cnt = 0;
                         t_info[timer_id].hz = q->msg.len;
                         t_info[timer_id].id = timer_id + timer_tick[0];
+                        t_info[timer_id].ctx = p;
                         while (1) {
                             rc = pthread_create( &timers[timer_id], &attr, timer_thread, (void *)&t_info[timer_id]);
                             if (rc == 0) {
@@ -318,10 +320,11 @@ static void timers_start(void *P) {
     pthread_mutex_unlock(&ctx->startup_mutex);
 }
 
-static void *timer_thread(void *p)
+static void *timer_thread(void *t_info_p)
 {
     t_info_t *t_info;
-    t_info = p;
+    t_info = t_info_p;
+    plugins_t *ctx = t_info->ctx;
     struct timespec tv, tnext, tnow;
     int rc;
     int64_t sleep_time = 0;
@@ -330,7 +333,7 @@ static void *timer_thread(void *p)
 #ifdef USE_PRCTL
     prctl(PR_SET_NAME,"timers_slave\0",NULL,NULL,NULL);
 #endif
-    fwl (LOG_INFO, p, "Starting timer thread @ %dHz\n",t_info->hz);
+    fwl (LOG_INFO, ctx, "Starting timer thread @ %dHz\n",t_info->hz);
 
     clock_gettime(CLOCK_REALTIME, &tnext);
 
@@ -340,14 +343,14 @@ static void *timer_thread(void *p)
         if (tnext.tv_nsec >= 1000000000) {
             tnext.tv_nsec -= 1000000000;
             tnext.tv_nsec += 1000000000 % t_info->hz; // avoid drift
-            fwl (LOG_DEBUG, p, "drift avoidance %ld\n", 1000000000L % t_info->hz);
+            fwl (LOG_DEBUG, ctx, "drift avoidance %ld\n", 1000000000L % t_info->hz);
             tnext.tv_sec++;
         }
 
         sleep_time = s_ts_diff_time_ns(&tnow, &tnext, NULL);
         if (sleep_time <= -10000000000) { //over 10 seconds late - assume clock-drift.
             clock_gettime(CLOCK_REALTIME, &tnext); // 'resetting' timer
-            fwl (LOG_INFO, p, "TIMERS Reset after long sleep\n");
+            fwl (LOG_INFO, ctx, "TIMERS Reset after long sleep\n");
         }
 
         tv.tv_sec = 0;
@@ -365,7 +368,7 @@ static void *timer_thread(void *p)
             // portable, simple way to wait for timer. 
             rc=pselect(0, NULL, NULL, NULL, &tv,NULL);
             if (rc != 0) {
-                fwl (LOG_DEBUG, p, "rc = %d during select. Sperious timer may occured\n", rc);
+                fwl (LOG_DEBUG, ctx, "rc = %d during select. Sperious timer may occured\n", rc);
             }
         }
         // we do NOT want to emit if we are canceled 
