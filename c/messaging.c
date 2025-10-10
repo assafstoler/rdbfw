@@ -733,6 +733,7 @@ int emit_cb (void *data, void *user_ptr) {
     rdbmsg_queue_t *q;
     int rc;
     void *ptr = NULL;
+    void *save_ptr = NULL;
     int lock_rc;
     int lock_rc_try_cnt=0;
     int lock_errno;
@@ -765,12 +766,14 @@ int emit_cb (void *data, void *user_ptr) {
         }
         if (ptr != NULL) {
             memcpy (ptr, msg->data, msg->len);
+            save_ptr = msg->data;
             msg->data = ptr;
         } 
         else {
             //TODO: Alloc!!!
             fwl_no_emit (LOG_ERROR, NULL, "out of memory sending %d to %s. message discarded\n",msg->id, ctx->uname);
             q = NULL; // ensure we don't free a random pointer
+            msg->data = save_ptr;
             goto emit_err;
         }
 
@@ -783,11 +786,13 @@ int emit_cb (void *data, void *user_ptr) {
 #endif
         if (q == NULL) {
             fwl_no_emit (LOG_ERROR, NULL, "out of message buffers sending %d to %s\n",msg->id, ctx->uname);
+            msg->data = save_ptr;
             goto emit_err;
         }
         memset(q,0,sizeof(rdbmsg_queue_t));
         
         memcpy(&(q->msg), msg, sizeof (rdbmsg_msg_t));
+        msg->data = save_ptr;
 
         if ( !msg->msg_mutex ) { //legacy
             msg->msg_q_pool = ctx->msg_q_pool;
