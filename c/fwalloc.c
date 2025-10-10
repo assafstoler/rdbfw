@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <signal.h>
 
 #include "rdb/rdb.h"
 #include "log.h"
@@ -396,7 +397,7 @@ void *rdbfw_alloc(uint32_t size){
 #ifdef FWALLOC_BYPASS 
     return malloc (size);
 #else
-    alloc_master_t *am, *am_prev, *am_next;
+    alloc_master_t *am=NULL, *am_prev=NULL, *am_next=NULL;
     block_t  *blk_next=NULL;
 
     pthread_mutex_lock(&alloc_mutex);
@@ -515,6 +516,7 @@ void rdbfw_free(void *ptr){
     }
     else if ( tmp_ref_ct < 0 ) {
         fwl ( LOG_FATAL, NULL, "double free at fwalloc\n" );
+	raise(SIGTRAP);
         exit (1);
     }
     
